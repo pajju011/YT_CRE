@@ -7,6 +7,17 @@ remotion/out/
 __pycache__/
 *.pyc
 venv/
+.venv*/
+*.wav
+
+# models & heavy binary weights
+models/
+*.onnx
+*.bin
+
+# backups and temporary files
+*.backup.*
+*.backup.json
 
 # heavy regenerable per-short artifacts:
 # voice/ = cached ElevenLabs TTS lines, output/ = rendered videos.
