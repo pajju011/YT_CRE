@@ -43,3 +43,6 @@ client_secrets.json
 token.json
 
 media/uploads/
+
+# freefield studio
+freefield/

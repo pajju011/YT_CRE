@@ -103,6 +103,10 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             self.handle_get_music_beds()
         elif path == "/api/sfx-catalog":
             self.handle_get_sfx_catalog()
+        elif path == "/api/freefield/status":
+            self.handle_get_freefield_status()
+        elif path == "/api/freefield/apps":
+            self.handle_get_freefield_apps()
         elif path == "/" or path == "/index.html":
             self.serve_file(ROOT / "web/index.html")
         else:
@@ -140,6 +144,8 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.handle_upload_video(body)
             elif path == "/api/storyboard/decompose":
                 self.handle_storyboard_decompose(body)
+            elif path == "/api/freefield/start":
+                self.handle_start_freefield(body)
             elif path == "/api/generate-from-prompt":
                 self.handle_generate_from_prompt(body)
             else:
@@ -219,6 +225,35 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         try:
             from tools.auto_sound_designer import get_available_sfx
             self.send_json({"ok": True, "sfx": get_available_sfx()})
+        except Exception as e:
+            self.send_json({"ok": False, "error": str(e)}, status=500)
+
+    def handle_get_freefield_status(self):
+        try:
+            from tools import freefield_bridge
+            running = freefield_bridge.is_freefield_running()
+            self.send_json({
+                "ok": True,
+                "running": running,
+                "url": freefield_bridge.FREEFIELD_URL,
+                "appsCount": 120
+            })
+        except Exception as e:
+            self.send_json({"ok": False, "error": str(e)}, status=500)
+
+    def handle_get_freefield_apps(self):
+        try:
+            from tools import freefield_bridge
+            apps = freefield_bridge.get_freefield_catalog()
+            self.send_json({"ok": True, "apps": apps, "count": len(apps)})
+        except Exception as e:
+            self.send_json({"ok": False, "error": str(e)}, status=500)
+
+    def handle_start_freefield(self, body):
+        try:
+            from tools import freefield_bridge
+            res = freefield_bridge.start_freefield_server()
+            self.send_json(res)
         except Exception as e:
             self.send_json({"ok": False, "error": str(e)}, status=500)
 

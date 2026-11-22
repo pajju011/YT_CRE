@@ -756,9 +756,12 @@
       <div class="logo-name">VideoAI Studio</div>
     </a>
     <div class="nav-actions">
+      <button class="btn-settings" onclick="openFreefieldStudio()" style="border-color: rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.12); color: #c7d2fe;">
+        ✨ Freefield (120+ Apps)
+      </button>
       <div class="engine-badge">
         <span class="status-dot"></span>
-        Hunyuan • FreeVideo • Kokoro
+        Hunyuan • Freefield • Kokoro
       </div>
       <button class="btn-settings" onclick="openSettings()">
         ⚙️ AI Cores & Endpoints
@@ -1221,6 +1224,19 @@
         });
         select.appendChild(optgroup);
       });
+    }
+
+    async function openFreefieldStudio() {
+      try {
+        const res = await fetch('/api/freefield/status');
+        const data = await res.json();
+        if (!data.running) {
+          await fetch('/api/freefield/start', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+        }
+        window.open('http://127.0.0.1:3005', '_blank');
+      } catch (err) {
+        window.open('http://127.0.0.1:3005', '_blank');
+      }
     }
 
     function switchMode(mode) {
