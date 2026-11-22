@@ -107,6 +107,8 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             self.handle_get_freefield_status()
         elif path == "/api/freefield/apps":
             self.handle_get_freefield_apps()
+        elif path == "/api/cinema/metadata":
+            self.handle_get_cinema_metadata()
         elif path == "/" or path == "/index.html":
             self.serve_file(ROOT / "web/index.html")
         else:
@@ -254,6 +256,23 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             from tools import freefield_bridge
             res = freefield_bridge.start_freefield_server()
             self.send_json(res)
+        except Exception as e:
+            self.send_json({"ok": False, "error": str(e)}, status=500)
+
+    def handle_get_cinema_metadata(self):
+        try:
+            from tools import cinema_studio
+            self.send_json({
+                "ok": True,
+                "camera_moves": [{"id": k, "name": v["name"], "desc": v["desc"]} for k, v in cinema_studio.CAMERA_MOVES.items()],
+                "genres": [{"id": k, "name": k.title()} for k in cinema_studio.GENRES.keys()],
+                "eras": [{"id": k, "name": k.title()} for k in cinema_studio.ERAS.keys()],
+                "cameras": [{"id": k, "name": k.replace("_", " ").title()} for k in cinema_studio.CAMERAS.keys()],
+                "lenses": [{"id": k, "name": k.replace("_", " ").title()} for k in cinema_studio.LENSES.keys()],
+                "lightings": [{"id": k, "name": k.replace("_", " ").title()} for k in cinema_studio.LIGHTINGS.keys()],
+                "palettes": [{"id": k, "name": k.replace("_", " ").title()} for k in cinema_studio.PALETTES.keys()],
+                "presets": cinema_studio.CINEMA_PRESETS
+            })
         except Exception as e:
             self.send_json({"ok": False, "error": str(e)}, status=500)
 
@@ -613,6 +632,14 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             custom_vo = [
                 {"beat": "speech", "text": prompt if prompt else "Hello! Welcome to our AI video generation studio.", "start": 0.2, "end": 4.5}
             ]
+        elif category in ["cinema", "cinema-video"]:
+            proj_id = "short-cinema"
+            custom_title = "Cinema Studio (Freefield Engine)"
+            pdir = ROOT / "shorts" / "short-cinema"
+            pdir.mkdir(parents=True, exist_ok=True)
+            custom_vo = [
+                {"beat": "hook", "text": prompt if prompt else "Cinema Studio in motion.", "start": 0.3, "end": 5.0}
+            ]
         elif category == "storyboard":
             proj_id = "short-storyboard"
             custom_title = "Multi-Scene Storyboard"
@@ -768,6 +795,27 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 raw_sb_path = Path(res_sb.get("raw_video", ""))
                 if raw_sb_path.exists():
                     raw_video = raw_sb_path
+
+        # Check Freefield Cinema Studio & 33 Camera Moves
+        if not raw_video and category in ["cinema", "cinema-video"]:
+            c_move = body.get("cameraMove", "dolly_in")
+            c_genre = body.get("genre", "general")
+            c_era = body.get("era", "modern")
+            c_camera = body.get("camera", "arri")
+            c_lens = body.get("lens", "anamorphic")
+            c_lighting = body.get("lighting", "cinematic")
+            c_palette = body.get("palette", "teal_orange")
+
+            from tools.cinema_studio import generate_cinema_short
+            res_cin = generate_cinema_short(
+                prompt, out_dir,
+                camera_move=c_move, genre=c_genre, era=c_era,
+                camera=c_camera, lens=c_lens, lighting=c_lighting, palette=c_palette
+            )
+            if res_cin.get("ok"):
+                raw_c_path = Path(res_cin["raw_video"])
+                if raw_c_path.exists():
+                    raw_video = raw_c_path
 
         # Check HunyuanVideo
         if not raw_video and category == "hunyuan":

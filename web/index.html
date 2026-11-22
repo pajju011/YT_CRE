@@ -788,6 +788,9 @@
         <button class="mode-tab active" id="tabPrompt" onclick="switchMode('prompt')">
           ✨ Text-to-Video Prompt
         </button>
+        <button class="mode-tab" id="tabCinema" onclick="switchMode('cinema')">
+          🎥 Cinema Studio (Freefield)
+        </button>
         <button class="mode-tab" id="tabStoryboard" onclick="switchMode('storyboard')">
           🎬 Multi-Scene Storyboard
         </button>
@@ -874,9 +877,129 @@
         </div>
       </div>
 
+      <!-- Freefield Cinema Studio & 33 Camera Moves Controls -->
+      <div id="cinemaSection" style="display: none; flex-direction: column; gap: 14px; background: rgba(9, 12, 16, 0.6); border: 1px solid var(--border); border-radius: 12px; padding: 18px;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 13px; font-weight: 700; color: #a5b4fc; display: flex; align-items: center; gap: 6px;">
+            🎥 Freefield Cinema Studio — 33 Camera Moves & Film Optics
+          </span>
+          <span style="font-size: 11px; color: var(--teal); font-weight: 600;">✓ Free Local / Cloud Dual Engine</span>
+        </div>
+
+        <!-- 1-Click Curated Cinema Presets -->
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">1-Click Presets:</span>
+          <span class="chip" onclick="applyCinemaPreset('matrix_bullet_time')">⚡ Matrix 360° Bullet Time</span>
+          <span class="chip" onclick="applyCinemaPreset('cyberpunk_noir')">🌧️ Cyberpunk Rain Detective</span>
+          <span class="chip" onclick="applyCinemaPreset('vertigo_dolly_zoom')">🌀 Vertigo Dolly Zoom</span>
+          <span class="chip" onclick="applyCinemaPreset('fpv_action_drone')">🦅 FPV Action Drone Dive</span>
+          <span class="chip" onclick="applyCinemaPreset('vintage_western')">🏜️ 1970s Panavision Western</span>
+        </div>
+
+        <!-- Camera Controls Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 4px;">
+          <div>
+            <label class="option-label">Camera Motion (33 Moves)</label>
+            <select class="select-input" id="optCinemaMove">
+              <option value="bullet_time" selected>⚡ 360° Bullet Time Orbit</option>
+              <option value="dolly_in">🎬 Dolly In (Smooth Push)</option>
+              <option value="dolly_out">🎬 Dolly Out (Reveal)</option>
+              <option value="crash_zoom">💥 Crash Zoom (Fast Impact)</option>
+              <option value="dolly_zoom">🌀 Dolly Zoom (Vertigo Effect)</option>
+              <option value="pan_left">⬅️ Pan Left (Horizontal Sweep)</option>
+              <option value="pan_right">➡️ Pan Right (Horizontal Sweep)</option>
+              <option value="whip_pan">🌪️ Whip Pan (Motion Blur Snap)</option>
+              <option value="tilt_up">⬆️ Tilt Up (Dramatic Ascent)</option>
+              <option value="tilt_down">⬇️ Tilt Down (Descent)</option>
+              <option value="pedestal_up">🪜 Pedestal Up (Elevator Rise)</option>
+              <option value="pedestal_down">🪜 Pedestal Down (Descent)</option>
+              <option value="arc_left">🔄 Arc Left (Frontal Orbit)</option>
+              <option value="arc_right">🔄 Arc Right (Frontal Orbit)</option>
+              <option value="crane_down">🏗️ Crane Down (High to Low)</option>
+              <option value="drone_orbit">🛸 Drone Orbit (Aerial Survey)</option>
+              <option value="tracking">🏃 Dynamic Tracking (Steadycam)</option>
+              <option value="handheld">📹 Cinematic Handheld (Natural Shake)</option>
+              <option value="static">🔒 Static Locked Off (Rock Solid)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="option-label">Film Genre</label>
+            <select class="select-input" id="optCinemaGenre">
+              <option value="general">Feature Film / General</option>
+              <option value="cyberpunk" selected>Cyberpunk Thriller</option>
+              <option value="noir">Film Noir</option>
+              <option value="scifi">Sci-Fi Space Opera</option>
+              <option value="drama">Emotional Drama</option>
+              <option value="western">Classic Western</option>
+              <option value="action">Action Blockbuster</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="option-label">Era & Film Stock</label>
+            <select class="select-input" id="optCinemaEra">
+              <option value="modern" selected>Modern 8K Sensor</option>
+              <option value="future">Near Future Holographic</option>
+              <option value="1990s">1990s Indie 35mm</option>
+              <option value="1980s">1980s Analog Neon</option>
+              <option value="1970s">1970s Panavision Vintage</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="option-label">Camera Body</label>
+            <select class="select-input" id="optCinemaCamera">
+              <option value="arri" selected>ARRI Alexa 65 (Full-Frame Cine)</option>
+              <option value="red">RED V-Raptor (8K Razor Sharp)</option>
+              <option value="imax_70mm">IMAX 70mm Large Format</option>
+              <option value="panavision">Panavision Millennium DXL2</option>
+              <option value="bolex_16mm">Bolex 16mm Grainy Film</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="option-label">Lens & Optics</label>
+            <select class="select-input" id="optCinemaLens">
+              <option value="anamorphic" selected>Classic Anamorphic 2x (Blue Streak & Oval Bokeh)</option>
+              <option value="prime_50mm">50mm f/1.2 Modern Prime (Creamy Bokeh)</option>
+              <option value="wide_24mm">24mm Ultra-Wide Perspective</option>
+              <option value="portrait_85mm">85mm Portrait Bokeh Master</option>
+              <option value="vintage">1970s Vintage Prime (Soft Halation)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="option-label">Lighting & Atmosphere</label>
+            <select class="select-input" id="optCinemaLighting">
+              <option value="cinematic">Cinematic Natural Key/Fill</option>
+              <option value="neon_cyber" selected>Cyber Neon Reflections & Wet Rain</option>
+              <option value="golden_hour">Volumetric Golden Hour Glow</option>
+              <option value="chiaroscuro">Moody Chiaroscuro & Deep Shadows</option>
+              <option value="rembrandt">Rembrandt Portrait Studio</option>
+              <option value="silhouette">High Contrast Silhouette</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="option-label">Color Grading Palette</label>
+            <select class="select-input" id="optCinemaPalette">
+              <option value="teal_orange" selected>Blockbuster Teal & Orange</option>
+              <option value="neon_glow">Cyber Neon Cyan & Magenta</option>
+              <option value="kodak_gold">Kodak Gold 35mm Warmth</option>
+              <option value="monochrome">Monochrome Silver Gelatin B&W</option>
+              <option value="desaturated">Moody Desaturated Earthy</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
       <!-- Quick Prompt Suggestions -->
       <div class="suggestions" id="suggestionsRow">
         <span class="suggestion-label">Try an idea:</span>
+        <span class="chip" onclick="usePrompt('Cyberpunk detective lighting a cigarette under neon rain in a dark futuristic alley', 'cinema')">🎥 Cyberpunk Rain (Cinema Studio)</span>
+        <span class="chip" onclick="usePrompt('A cyber warrior floating mid-air dodging glowing laser beams as time freezes around him', 'cinema')">🎥 Matrix 360° Bullet-Time</span>
         <span class="chip" onclick="usePrompt('Adventures of the little explorer discovering the glowing crystal cave', 'storyboard')">🎬 3D Crystal Cave (Storyboard)</span>
         <span class="chip" onclick="usePrompt('Cyberpunk detective investigating a neon alley conspiracy in the rainy city', 'storyboard')">🎬 Cyberpunk Storyboard</span>
         <span class="chip" onclick="usePrompt('Hello! Welcome to our 100% free AI video generator studio. Animate photos and generate viral videos effortlessly.', 'avatar', 'en', 'en-US-JennyNeural')">🗣️ English Avatar</span>
@@ -894,6 +1017,7 @@
         <div class="option-group">
           <label class="option-label">AI Video Generation Core</label>
           <select class="select-input" id="optCategory">
+            <option value="cinema" selected>🎥 Cinema Studio (Freefield 33 Camera Moves)</option>
             <option value="storyboard">🎬 Multi-Scene Storyboard & Consistency</option>
             <option value="avatar">🗣️ Talking Avatar (Photo Lip-Sync)</option>
             <option value="wan">🎬 Wan 2.5 / 2.7 Video (Comfy Cloud)</option>
@@ -1239,9 +1363,47 @@
       }
     }
 
+    const CINEMA_PRESETS_DATA = {
+      matrix_bullet_time: {
+        prompt: 'A cyber warrior floating mid-air dodging glowing laser beams as time freezes around him',
+        move: 'bullet_time', genre: 'scifi', era: 'modern', camera: 'arri', lens: 'anamorphic', lighting: 'neon_cyber', palette: 'neon_glow'
+      },
+      cyberpunk_noir: {
+        prompt: 'A detective in a trench coat lights a cigarette under neon rain in a dark futuristic alley',
+        move: 'dolly_in', genre: 'noir', era: 'future', camera: 'panavision', lens: 'anamorphic', lighting: 'chiaroscuro', palette: 'teal_orange'
+      },
+      vertigo_dolly_zoom: {
+        prompt: 'A stunned protagonist turning around in shock as the world warps and expands behind them',
+        move: 'dolly_zoom', genre: 'drama', era: 'modern', camera: 'red', lens: 'prime_50mm', lighting: 'rembrandt', palette: 'desaturated'
+      },
+      fpv_action_drone: {
+        prompt: 'An extreme athlete leaping from a cliff edge into a majestic sunlit canyon',
+        move: 'drone_orbit', genre: 'action', era: 'modern', camera: 'imax_70mm', lens: 'wide_24mm', lighting: 'golden_hour', palette: 'teal_orange'
+      },
+      vintage_western: {
+        prompt: 'A solitary gunslinger on horseback gazing across the vast arid desert at sundown',
+        move: 'pan_right', genre: 'western', era: '1970s', camera: 'imax_70mm', lens: 'vintage', lighting: 'golden_hour', palette: 'kodak_gold'
+      }
+    };
+
+    function applyCinemaPreset(id) {
+      const p = CINEMA_PRESETS_DATA[id];
+      if (!p) return;
+      document.getElementById('promptInput').value = p.prompt;
+      if (document.getElementById('optCinemaMove')) document.getElementById('optCinemaMove').value = p.move;
+      if (document.getElementById('optCinemaGenre')) document.getElementById('optCinemaGenre').value = p.genre;
+      if (document.getElementById('optCinemaEra')) document.getElementById('optCinemaEra').value = p.era;
+      if (document.getElementById('optCinemaCamera')) document.getElementById('optCinemaCamera').value = p.camera;
+      if (document.getElementById('optCinemaLens')) document.getElementById('optCinemaLens').value = p.lens;
+      if (document.getElementById('optCinemaLighting')) document.getElementById('optCinemaLighting').value = p.lighting;
+      if (document.getElementById('optCinemaPalette')) document.getElementById('optCinemaPalette').value = p.palette;
+      switchMode('cinema');
+    }
+
     function switchMode(mode) {
       currentMode = mode;
       document.getElementById('tabPrompt').className = mode === 'prompt' ? 'mode-tab active' : 'mode-tab';
+      document.getElementById('tabCinema').className = mode === 'cinema' ? 'mode-tab active' : 'mode-tab';
       document.getElementById('tabStoryboard').className = mode === 'storyboard' ? 'mode-tab active' : 'mode-tab';
       document.getElementById('tabAvatar').className = mode === 'avatar' ? 'mode-tab active' : 'mode-tab';
       document.getElementById('tabUpload').className = mode === 'upload' ? 'mode-tab active' : 'mode-tab';
@@ -1249,24 +1411,36 @@
       const dropzone = document.getElementById('dropzone');
       const avatarDropzone = document.getElementById('avatarDropzone');
       const storyboardSection = document.getElementById('storyboardSection');
+      const cinemaSection = document.getElementById('cinemaSection');
       const suggestions = document.getElementById('suggestionsRow');
 
-      if (mode === 'upload') {
+      if (mode === 'cinema') {
+        dropzone.classList.remove('active');
+        avatarDropzone.classList.remove('active');
+        storyboardSection.style.display = 'none';
+        cinemaSection.style.display = 'flex';
+        suggestions.style.display = 'flex';
+        document.getElementById('optCategory').value = 'cinema';
+        if (document.getElementById('optMusicBed')) document.getElementById('optMusicBed').value = 'cinematic-min';
+      } else if (mode === 'upload') {
         dropzone.classList.add('active');
         avatarDropzone.classList.remove('active');
         storyboardSection.style.display = 'none';
+        cinemaSection.style.display = 'none';
         suggestions.style.display = 'none';
         document.getElementById('optCategory').value = 'kids';
       } else if (mode === 'avatar') {
         dropzone.classList.remove('active');
         avatarDropzone.classList.add('active');
         storyboardSection.style.display = 'none';
+        cinemaSection.style.display = 'none';
         suggestions.style.display = 'flex';
         document.getElementById('optCategory').value = 'avatar';
       } else if (mode === 'storyboard') {
         dropzone.classList.remove('active');
         avatarDropzone.classList.remove('active');
         storyboardSection.style.display = 'flex';
+        cinemaSection.style.display = 'none';
         suggestions.style.display = 'flex';
         document.getElementById('optCategory').value = 'storyboard';
         if (currentStoryboardScenes.length === 0) {
@@ -1276,6 +1450,7 @@
         dropzone.classList.remove('active');
         avatarDropzone.classList.remove('active');
         storyboardSection.style.display = 'none';
+        cinemaSection.style.display = 'none';
         suggestions.style.display = 'flex';
       }
     }
@@ -1378,6 +1553,8 @@
           switchMode('avatar');
         } else if (category === 'storyboard') {
           switchMode('storyboard');
+        } else if (category === 'cinema') {
+          switchMode('cinema');
         }
       }
       if (lang) {
@@ -1537,6 +1714,14 @@
         const persona = document.getElementById('optPersona')?.value || '3d_cartoon';
         const scenesCount = parseInt(document.getElementById('optScenesCount')?.value || '4');
 
+        const cameraMove = document.getElementById('optCinemaMove')?.value || 'dolly_in';
+        const cinemaGenre = document.getElementById('optCinemaGenre')?.value || 'general';
+        const cinemaEra = document.getElementById('optCinemaEra')?.value || 'modern';
+        const cinemaCamera = document.getElementById('optCinemaCamera')?.value || 'arri';
+        const cinemaLens = document.getElementById('optCinemaLens')?.value || 'anamorphic';
+        const cinemaLighting = document.getElementById('optCinemaLighting')?.value || 'cinematic';
+        const cinemaPalette = document.getElementById('optCinemaPalette')?.value || 'teal_orange';
+
         const res = await fetch('/api/generate-from-prompt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1551,7 +1736,14 @@
             avatarPath: currentUploadedAvatarPath,
             persona: persona,
             scenesCount: scenesCount,
-            scenes: storyboardScenes
+            scenes: storyboardScenes,
+            cameraMove,
+            genre: cinemaGenre,
+            era: cinemaEra,
+            camera: cinemaCamera,
+            lens: cinemaLens,
+            lighting: cinemaLighting,
+            palette: cinemaPalette
           })
         });
 
@@ -1580,9 +1772,12 @@
       const musicEl = document.getElementById('optMusicBed');
       const musicName = (musicEl && musicEl.value !== 'none') ? musicEl.options[musicEl.selectedIndex].text.replace(/^[^\w]+/, '').trim() : 'Voice Only';
       const sfxName = document.getElementById('optSfx').checked ? 'Auto-SFX' : 'SFX Off';
+      const cat = document.getElementById('optCategory').value;
+      const cinemaMoveName = document.getElementById('optCinemaMove') ? document.getElementById('optCinemaMove').options[document.getElementById('optCinemaMove').selectedIndex].text.replace(/^[^\w]+/, '').trim() : '';
+      const cameraTag = (cat === 'cinema') ? ` • ${cinemaMoveName}` : '';
       const metaEl = document.getElementById('resMeta');
       if (metaEl) {
-        metaEl.innerText = `Format: 9:16 Vertical • Kinetic Captions • ${musicName} • ${sfxName}`;
+        metaEl.innerText = `Format: 9:16 Vertical • Kinetic Captions • ${musicName} • ${sfxName}${cameraTag}`;
       }
 
       const noteEl = document.getElementById('resNote');
