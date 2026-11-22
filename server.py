@@ -97,6 +97,8 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             self.handle_get_config()
         elif path == "/api/voices":
             self.handle_get_voices()
+        elif path == "/api/personas":
+            self.handle_get_personas()
         elif path == "/" or path == "/index.html":
             self.serve_file(ROOT / "web/index.html")
         else:
@@ -132,6 +134,8 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.handle_save_config(body)
             elif path == "/api/upload-video":
                 self.handle_upload_video(body)
+            elif path == "/api/storyboard/decompose":
+                self.handle_storyboard_decompose(body)
             elif path == "/api/generate-from-prompt":
                 self.handle_generate_from_prompt(body)
             else:
@@ -188,6 +192,26 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 ],
                 "multilingual": CURATED_VOICES
             })
+        except Exception as e:
+            self.send_json({"ok": False, "error": str(e)}, status=500)
+
+    def handle_get_personas(self):
+        try:
+            from tools.character_consistency import get_available_personas
+            self.send_json({"ok": True, "personas": get_available_personas()})
+        except Exception as e:
+            self.send_json({"ok": False, "error": str(e)}, status=500)
+
+    def handle_storyboard_decompose(self, body):
+        try:
+            from tools.storyboard_engine import decompose_story
+            from tools.character_consistency import BUILTIN_PERSONAS
+            prompt = body.get("prompt", "Adventures in the crystal cave")
+            persona_id = body.get("persona", "3d_cartoon")
+            scenes_count = int(body.get("scenesCount", 4))
+            p_info = BUILTIN_PERSONAS.get(persona_id, BUILTIN_PERSONAS["3d_cartoon"])
+            scenes = decompose_story(prompt, p_info["name"], scenes_count)
+            self.send_json({"ok": True, "scenes": scenes, "persona": p_info})
         except Exception as e:
             self.send_json({"ok": False, "error": str(e)}, status=500)
 
@@ -533,6 +557,23 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             custom_vo = [
                 {"beat": "speech", "text": prompt if prompt else "Hello! Welcome to our AI video generation studio.", "start": 0.2, "end": 4.5}
             ]
+        elif category == "storyboard":
+            proj_id = "short-storyboard"
+            custom_title = "Multi-Scene Storyboard"
+            pdir = ROOT / "shorts" / "short-storyboard"
+            pdir.mkdir(parents=True, exist_ok=True)
+            persona_id = body.get("persona", "3d_cartoon")
+            scenes_count = int(body.get("scenesCount", 4))
+            custom_scenes = body.get("scenes")
+            if not custom_scenes:
+                from tools.storyboard_engine import decompose_story
+                from tools.character_consistency import BUILTIN_PERSONAS
+                p_info = BUILTIN_PERSONAS.get(persona_id, BUILTIN_PERSONAS["3d_cartoon"])
+                custom_scenes = decompose_story(prompt, p_info["name"], scenes_count)
+            custom_vo = [
+                {"beat": s.get("beat", f"scene_{i+1}"), "text": s.get("narration", s.get("text", "")), "start": round(i*4.0, 2), "end": round((i+1)*4.0, 2)}
+                for i, s in enumerate(custom_scenes)
+            ]
         elif matches_any_word(["chess", "checkmate"], prompt):
             proj_id = "short-1-chess"
         else:
@@ -658,6 +699,19 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             subprocess.run(cmd_avatar, cwd=str(ROOT), capture_output=True)
             if out_avatar_mp4.exists():
                 raw_video = out_avatar_mp4
+
+        # Check Multi-Scene Storyboard
+        if not raw_video and category == "storyboard":
+            persona_id = body.get("persona", "3d_cartoon")
+            scenes_count = int(body.get("scenesCount", 4))
+            c_scenes = body.get("scenes") or custom_scenes
+
+            from tools.storyboard_engine import build_storyboard
+            res_sb = build_storyboard(prompt, pdir, persona_id=persona_id, scene_count=scenes_count, custom_scenes=c_scenes)
+            if res_sb.get("ok"):
+                raw_sb_path = Path(res_sb.get("raw_video", ""))
+                if raw_sb_path.exists():
+                    raw_video = raw_sb_path
 
         # Check HunyuanVideo
         if not raw_video and category == "hunyuan":

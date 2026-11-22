@@ -280,6 +280,58 @@
       margin-top: 6px;
     }
 
+    /* Multi-Scene Storyboard Grid Cards */
+    .storyboard-card {
+      background: #090c10;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.2s ease;
+    }
+    .storyboard-card:hover {
+      border-color: var(--primary);
+    }
+    .scene-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--teal);
+      background: rgba(77, 184, 168, 0.12);
+      padding: 3px 8px;
+      border-radius: 6px;
+      align-self: flex-start;
+    }
+    .scene-input {
+      background: #11151c;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      font-family: inherit;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .scene-textarea {
+      background: #11151c;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: #fff;
+      font-size: 12px;
+      outline: none;
+      resize: vertical;
+      min-height: 55px;
+      font-family: inherit;
+      line-height: 1.4;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
     /* Prompt Suggestion Chips */
     .suggestions {
       display: flex;
@@ -733,6 +785,9 @@
         <button class="mode-tab active" id="tabPrompt" onclick="switchMode('prompt')">
           ✨ Text-to-Video Prompt
         </button>
+        <button class="mode-tab" id="tabStoryboard" onclick="switchMode('storyboard')">
+          🎬 Multi-Scene Storyboard
+        </button>
         <button class="mode-tab" id="tabAvatar" onclick="switchMode('avatar')">
           🗣️ Talking Avatar (Photo Lip-Sync)
         </button>
@@ -777,15 +832,54 @@
         </div>
       </div>
 
+      <!-- Multi-Scene Storyboard Planner -->
+      <div id="storyboardSection" style="display: none; flex-direction: column; gap: 14px; background: rgba(9, 12, 16, 0.6); border: 1px solid var(--border); border-radius: 12px; padding: 18px;">
+        <div style="display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 220px;">
+            <label class="option-label">Character Persona & Consistent Identity</label>
+            <select class="select-input" id="optPersona" onchange="planStoryboard()">
+              <option value="3d_cartoon">🎨 3D Cartoon / Pixar Hero (Sammy)</option>
+              <option value="cinematic">🎬 Cinematic Photorealistic Hero (Maya)</option>
+              <option value="anime">⚡ Modern Anime Protagonist (Ren)</option>
+              <option value="cyberpunk">🕶️ Cyberpunk Neon Runner (Kael)</option>
+              <option value="documentary">📚 Archival Documentary (Prof. Vance)</option>
+            </select>
+          </div>
+          <div style="width: 140px;">
+            <label class="option-label">Scenes Count</label>
+            <select class="select-input" id="optScenesCount" onchange="planStoryboard()">
+              <option value="3">3 Scenes (~12s)</option>
+              <option value="4" selected>4 Scenes (~17s)</option>
+              <option value="5">5 Scenes (~22s)</option>
+              <option value="6">6 Scenes (~27s)</option>
+            </select>
+          </div>
+          <button class="btn-action" style="background: #252e42; color: #fff; padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600;" onclick="planStoryboard()">
+            ✨ Auto-Plan Scenes
+          </button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">
+            Story Scenes & Visual Beats (Edit prompts, narration, or camera motions below):
+          </span>
+          <span style="font-size: 11px; color: var(--teal); font-weight: 600;" id="storyboardStatus">✓ Ready</span>
+        </div>
+
+        <div id="storyboardGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+          <!-- Populated dynamically with scene cards -->
+        </div>
+      </div>
+
       <!-- Quick Prompt Suggestions -->
       <div class="suggestions" id="suggestionsRow">
         <span class="suggestion-label">Try an idea:</span>
+        <span class="chip" onclick="usePrompt('Adventures of the little explorer discovering the glowing crystal cave', 'storyboard')">🎬 3D Crystal Cave (Storyboard)</span>
+        <span class="chip" onclick="usePrompt('Cyberpunk detective investigating a neon alley conspiracy in the rainy city', 'storyboard')">🎬 Cyberpunk Storyboard</span>
         <span class="chip" onclick="usePrompt('Hello! Welcome to our 100% free AI video generator studio. Animate photos and generate viral videos effortlessly.', 'avatar', 'en', 'en-US-JennyNeural')">🗣️ English Avatar</span>
         <span class="chip" onclick="usePrompt('नमस्ते दोस्तों! एआई वीडियो जनरेटर स्टूडियो में आपका स्वागत है। किसी भी फोटो को बोलने वाला अवतार बनाएं।', 'avatar', 'hi', 'hi-IN-SwaraNeural')">🗣️ Hindi Avatar (हिन्दी)</span>
         <span class="chip" onclick="usePrompt('¡Hola a todos! Bienvenidos a nuestro estudio de generación de video con inteligencia artificial.', 'avatar', 'es', 'es-ES-ElviraNeural')">🗣️ Spanish Avatar (Español)</span>
         <span class="chip" onclick="usePrompt('A cute little girl happily dancing to cheerful music, performing fun dance moves in colorful 3D cartoon animation', 'hunyuan')">Dancing 3D Girl (Hunyuan)</span>
-        <span class="chip" onclick="usePrompt('A futuristic cyberpunk city with flying neon cars and cinematic dynamic camera sweep', 'freevideo')">Cyberpunk City (FreeVideo)</span>
-        <span class="chip" onclick="usePrompt('An animated character speaking expressively with realistic lip synchronization', 'longcat')">Talking Avatar (LongCat)</span>
         <span class="chip" onclick="usePrompt('The ×11 mental math trick that feels like magic in two seconds', 'math')">×11 Math Trick</span>
         <span class="chip" onclick="usePrompt('How git reflog lets you undo any mistake even if you deleted your branch', 'dev')">Git Reflog Lifesaver</span>
       </div>
@@ -797,6 +891,7 @@
         <div class="option-group">
           <label class="option-label">AI Video Generation Core</label>
           <select class="select-input" id="optCategory">
+            <option value="storyboard">🎬 Multi-Scene Storyboard & Consistency</option>
             <option value="avatar">🗣️ Talking Avatar (Photo Lip-Sync)</option>
             <option value="hunyuan">🎬 Tencent HunyuanVideo (13B T2V)</option>
             <option value="freevideo">🎬 FlashML FreeVideo (MiniMax H3)</option>
@@ -995,6 +1090,7 @@
     let secondsElapsed = 0;
     let currentUploadedVideoPath = null;
     let currentUploadedAvatarPath = null;
+    let currentStoryboardScenes = [];
     let currentMode = 'prompt';
 
     const VOICE_CATALOG = {
@@ -1108,28 +1204,132 @@
     function switchMode(mode) {
       currentMode = mode;
       document.getElementById('tabPrompt').className = mode === 'prompt' ? 'mode-tab active' : 'mode-tab';
+      document.getElementById('tabStoryboard').className = mode === 'storyboard' ? 'mode-tab active' : 'mode-tab';
       document.getElementById('tabAvatar').className = mode === 'avatar' ? 'mode-tab active' : 'mode-tab';
       document.getElementById('tabUpload').className = mode === 'upload' ? 'mode-tab active' : 'mode-tab';
       
       const dropzone = document.getElementById('dropzone');
       const avatarDropzone = document.getElementById('avatarDropzone');
+      const storyboardSection = document.getElementById('storyboardSection');
       const suggestions = document.getElementById('suggestionsRow');
 
       if (mode === 'upload') {
         dropzone.classList.add('active');
         avatarDropzone.classList.remove('active');
+        storyboardSection.style.display = 'none';
         suggestions.style.display = 'none';
         document.getElementById('optCategory').value = 'kids';
       } else if (mode === 'avatar') {
         dropzone.classList.remove('active');
         avatarDropzone.classList.add('active');
+        storyboardSection.style.display = 'none';
         suggestions.style.display = 'flex';
         document.getElementById('optCategory').value = 'avatar';
+      } else if (mode === 'storyboard') {
+        dropzone.classList.remove('active');
+        avatarDropzone.classList.remove('active');
+        storyboardSection.style.display = 'flex';
+        suggestions.style.display = 'flex';
+        document.getElementById('optCategory').value = 'storyboard';
+        if (currentStoryboardScenes.length === 0) {
+          planStoryboard();
+        }
       } else {
         dropzone.classList.remove('active');
         avatarDropzone.classList.remove('active');
+        storyboardSection.style.display = 'none';
         suggestions.style.display = 'flex';
       }
+    }
+
+    async function planStoryboard() {
+      const prompt = document.getElementById('promptInput').value.trim() || 'Adventures of the little explorer in the crystal cave';
+      const persona = document.getElementById('optPersona').value;
+      const scenesCount = parseInt(document.getElementById('optScenesCount').value);
+      const statusEl = document.getElementById('storyboardStatus');
+      statusEl.innerText = 'Planning scenes...';
+
+      try {
+        const res = await fetch('/api/storyboard/decompose', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, persona, scenesCount })
+        });
+        const data = await res.json();
+        if (data.ok && data.scenes) {
+          currentStoryboardScenes = data.scenes;
+          renderStoryboardCards(data.scenes);
+          statusEl.innerText = '✓ ' + data.scenes.length + ' Scenes Planned';
+        } else {
+          statusEl.innerText = 'Error planning scenes';
+        }
+      } catch (err) {
+        statusEl.innerText = 'Offline fallback';
+        console.error(err);
+      }
+    }
+
+    function renderStoryboardCards(scenes) {
+      const grid = document.getElementById('storyboardGrid');
+      grid.innerHTML = '';
+
+      const motions = [
+        { id: 'zoom_in', name: 'Cinematic Push-In' },
+        { id: 'pan_right', name: 'Dynamic Pan Right' },
+        { id: 'tilt_up', name: 'Dramatic Tilt Up' },
+        { id: 'zoom_out', name: 'Heroic Reveal Zoom-Out' },
+        { id: 'pan_left', name: 'Cinematic Pan Left' },
+        { id: 'breathing', name: 'Living Atmosphere Orbit' }
+      ];
+
+      scenes.forEach((s, idx) => {
+        const card = document.createElement('div');
+        card.className = 'storyboard-card';
+        card.id = 'sceneCard_' + idx;
+
+        let motionOptions = motions.map(m => 
+          `<option value="${m.id}" ${s.motion === m.id ? 'selected' : ''}>${m.name}</option>`
+        ).join('');
+
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="scene-badge">SCENE ${idx + 1}: ${s.title || 'Beat'}</span>
+            <span style="font-size: 11px; color: var(--text-muted);">${s.duration || 4.0}s</span>
+          </div>
+          <div>
+            <label style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Camera Motion</label>
+            <select class="scene-input card-motion">${motionOptions}</select>
+          </div>
+          <div>
+            <label style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Visual Action / Setting</label>
+            <textarea class="scene-textarea card-action">${s.action || s.prompt || ''}</textarea>
+          </div>
+          <div>
+            <label style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Spoken Narration</label>
+            <input type="text" class="scene-input card-narration" value="${(s.narration || s.text || '').replace(/"/g, '&quot;')}" />
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function getEditedStoryboardScenes() {
+      const scenes = [];
+      const cards = document.querySelectorAll('.storyboard-card');
+      cards.forEach((card, idx) => {
+        const motion = card.querySelector('.card-motion')?.value || 'zoom_in';
+        const action = card.querySelector('.card-action')?.value || '';
+        const narration = card.querySelector('.card-narration')?.value || '';
+        scenes.push({
+          beat: 'scene_' + (idx + 1),
+          title: 'Scene ' + (idx + 1),
+          motion: motion,
+          action: action,
+          narration: narration,
+          duration: 4.5
+        });
+      });
+      return scenes;
     }
 
     function usePrompt(text, category, lang, voice) {
@@ -1138,6 +1338,8 @@
         document.getElementById('optCategory').value = category;
         if (category === 'avatar') {
           switchMode('avatar');
+        } else if (category === 'storyboard') {
+          switchMode('storyboard');
         }
       }
       if (lang) {
@@ -1292,6 +1494,10 @@
       setTimeout(() => setStep(4), 4800);
 
       try {
+        const storyboardScenes = category === 'storyboard' ? getEditedStoryboardScenes() : null;
+        const persona = document.getElementById('optPersona')?.value || '3d_cartoon';
+        const scenesCount = parseInt(document.getElementById('optScenesCount')?.value || '4');
+
         const res = await fetch('/api/generate-from-prompt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1302,7 +1508,10 @@
             speed,
             sfx,
             videoPath: currentUploadedVideoPath,
-            avatarPath: currentUploadedAvatarPath
+            avatarPath: currentUploadedAvatarPath,
+            persona: persona,
+            scenesCount: scenesCount,
+            scenes: storyboardScenes
           })
         });
 
