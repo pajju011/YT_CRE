@@ -171,9 +171,10 @@ def prepare_master_audio(audio_in, beats_data, work_dir, music_bed="lofi-warm", 
     return current_voice_stem, total_dur
 
 
-def composite_short(video_in, audio_in, beats_data, out_path, music_bed="lofi-warm", sfx_enabled=True, sfx_in=None):
+def composite_short(video_in, audio_in, beats_data, out_path, music_bed="lofi-warm", sfx_enabled=True, sfx_in=None, captions_enabled=False):
     """
-    Composites video + voice + ducked music + SFX + subtitles into a 1080x1920 Short.
+    Composites video + voice + ducked music + SFX into a 1080x1920 Short.
+    Captions are only burned when captions_enabled is explicitly True.
     """
     video_in = Path(video_in).resolve()
     out_path = Path(out_path).resolve()
@@ -192,15 +193,14 @@ def composite_short(video_in, audio_in, beats_data, out_path, music_bed="lofi-wa
 
     video_dur = get_media_duration(video_in)
 
-    # 2. Create Subtitle ASS
-    ass_path = work_dir / "temp_captions.ass"
-    generate_ass_subtitles(beats_data, ass_path)
-
-    # Escaping for FFmpeg filter path on Windows
-    ass_escaped = str(ass_path).replace("\\", "/").replace(":", "\\:")
-
-    # 3. Build FFmpeg command
-    filter_graph = f"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,subtitles='{ass_escaped}'[v]"
+    # 2. Subtitles pass (optional, disabled by default)
+    if captions_enabled and beats_data:
+        ass_path = work_dir / "temp_captions.ass"
+        generate_ass_subtitles(beats_data, ass_path)
+        ass_escaped = str(ass_path).replace("\\", "/").replace(":", "\\:")
+        filter_graph = f"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,subtitles='{ass_escaped}'[v]"
+    else:
+        filter_graph = "[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[v]"
 
     cmd = ["ffmpeg", "-y", "-hide_banner"]
 
@@ -251,6 +251,8 @@ def main():
     parser.add_argument("--sfx", action="store_true", default=True, help="Enable auto sound effects")
     parser.add_argument("--no-sfx", dest="sfx", action="store_false", help="Disable auto sound effects")
     parser.add_argument("--sfx-file", help="Optional pre-rendered SFX audio track")
+    parser.add_argument("--captions", dest="captions", action="store_true", default=False, help="Burn kinetic captions into the video (disabled by default)")
+    parser.add_argument("--no-captions", dest="captions", action="store_false", help="Do not burn captions (default)")
     args = parser.parse_args()
 
     beats_data = []
@@ -270,7 +272,8 @@ def main():
         args.out,
         music_bed=args.music,
         sfx_enabled=args.sfx,
-        sfx_in=args.sfx_file
+        sfx_in=args.sfx_file,
+        captions_enabled=args.captions
     )
     if not success:
         sys.exit(1)

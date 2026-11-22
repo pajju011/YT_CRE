@@ -1096,6 +1096,15 @@
           </label>
         </div>
 
+        <!-- Captions / Subtitles Toggle (Default OFF) -->
+        <div class="option-group">
+          <label class="option-label">Subtitles</label>
+          <label class="toggle-row">
+            <span class="toggle-text">Burn Captions</span>
+            <input type="checkbox" class="toggle-checkbox" id="optCaptions">
+          </label>
+        </div>
+
       </div>
 
       <!-- Generate Button -->
@@ -1131,7 +1140,7 @@
         </div>
         <div class="step-item" id="step4">
           <div class="step-icon">4</div>
-          <span>Compositing video, word captions, and 9:16 vertical crop</span>
+          <span>Compositing video, audio stems, and 9:16 vertical crop</span>
         </div>
         <div class="step-item" id="step5">
           <div class="step-icon">5</div>
@@ -1161,7 +1170,7 @@
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div class="result-tag">✓ Video Ready (1080×1920 • 30fps)</div>
           <h2 class="result-title" id="resTitle">Generated Short</h2>
-          <div class="result-meta" id="resMeta">Format: 9:16 Vertical • Kinetic Captions • Kokoro AI Voice</div>
+          <div class="result-meta" id="resMeta">Format: 9:16 Vertical • Clean Video • Kokoro AI Voice</div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 6px;">
@@ -1694,6 +1703,7 @@
       const voice = document.getElementById('optVoice').value;
       const speed = parseFloat(document.getElementById('optSpeed').value);
       const sfx = document.getElementById('optSfx').checked;
+      const captions = document.getElementById('optCaptions') ? document.getElementById('optCaptions').checked : false;
       const music = document.getElementById('optMusicBed') ? document.getElementById('optMusicBed').value : 'lofi-warm';
 
       // UI Transitions
@@ -1736,6 +1746,7 @@
             voice,
             speed,
             sfx,
+            captions,
             music,
             videoPath: currentUploadedVideoPath,
             avatarPath: currentUploadedAvatarPath,
@@ -1777,12 +1788,14 @@
       const musicEl = document.getElementById('optMusicBed');
       const musicName = (musicEl && musicEl.value !== 'none') ? musicEl.options[musicEl.selectedIndex].text.replace(/^[^\w]+/, '').trim() : 'Voice Only';
       const sfxName = document.getElementById('optSfx').checked ? 'Auto-SFX' : 'SFX Off';
+      const captionsOn = document.getElementById('optCaptions') ? document.getElementById('optCaptions').checked : false;
+      const capTag = captionsOn ? 'Kinetic Captions' : 'Clean Video (No Captions)';
       const cat = document.getElementById('optCategory').value;
       const cinemaMoveName = document.getElementById('optCinemaMove') ? document.getElementById('optCinemaMove').options[document.getElementById('optCinemaMove').selectedIndex].text.replace(/^[^\w]+/, '').trim() : '';
       const cameraTag = (cat === 'cinema') ? ` • ${cinemaMoveName}` : '';
       const metaEl = document.getElementById('resMeta');
       if (metaEl) {
-        metaEl.innerText = `Format: 9:16 Vertical • Kinetic Captions • ${musicName} • ${sfxName}${cameraTag}`;
+        metaEl.innerText = `Format: 9:16 Vertical • ${capTag} • ${musicName} • ${sfxName}${cameraTag}`;
       }
 
       const noteEl = document.getElementById('resNote');

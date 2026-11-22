@@ -546,6 +546,7 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         speed = float(body.get("speed", 1.0))
         sfx = body.get("sfx", True)
         music = body.get("music", "lofi-warm")
+        captions = bool(body.get("captions", False))  # Default False: don't create captions for all videos
         imported_video_path = body.get("videoPath")
 
         def matches_any_word(words, text):
@@ -877,6 +878,10 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 cmd_comp.append("--sfx")
             else:
                 cmd_comp.append("--no-sfx")
+            if captions:
+                cmd_comp.append("--captions")
+            else:
+                cmd_comp.append("--no-captions")
 
             res_c = subprocess.run(cmd_comp, cwd=str(ROOT), capture_output=True, text=True)
             if res_c.returncode == 0 and final_short_path.exists():
