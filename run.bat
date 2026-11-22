@@ -20,6 +20,8 @@ if exist "%~dp0.venv-kokoro\Scripts\activate.bat" (
 set "INTERACTIVE=1"
 if not "%~1"=="" (
     set "INTERACTIVE=0"
+    if /i "%~1"=="ui" goto opt_web_ui
+    if /i "%~1"=="web" goto opt_web_ui
     if /i "%~1"=="studio" goto opt_studio
     if /i "%~1"=="voice" goto opt_voice
     if /i "%~1"=="render" goto opt_render
@@ -30,7 +32,7 @@ if not "%~1"=="" (
     if /i "%~1"=="schedule" goto opt_schedule
     if /i "%~1"=="gen" goto opt_gen
     echo Unknown argument: %~1
-    echo Usage: run.bat [studio^|voice^|render^|sfx^|test^|auth^|upload^|schedule^|gen]
+    echo Usage: run.bat [ui^|studio^|voice^|render^|sfx^|test^|auth^|upload^|schedule^|gen]
     exit /b 1
 )
 
@@ -40,35 +42,46 @@ echo ================================================================
 echo           VIDEO GENERATOR - CONTROL PANEL
 echo ================================================================
 echo.
-echo   [1] Launch Remotion Studio (Visual Web Preview)
-echo   [2] Generate Voice ^& Captions (Kokoro AI: Short 2)
-echo   [3] Render Remotion Video (Short2Math / All)
-echo   [4] Mix Audio ^& Sound Effects (mix_sfx.py)
-echo   [5] Test Local Kokoro AI Voice (test_kokoro.py)
-echo   [6] YouTube: OAuth Login (auth_login.py)
-echo   [7] YouTube: Upload Video (upload_youtube.py)
-echo   [8] YouTube: Schedule Video (schedule_youtube.py)
-echo   [9] Regenerate Remotion Registry (npm run gen)
+echo   [1] Launch Web Studio (Modern Website UI) ★ RECOMMENDED
+echo   [2] Launch Remotion Studio (Visual Web Preview)
+echo   [3] Generate Voice ^& Captions (Kokoro AI: Short 2)
+echo   [4] Render Remotion Video (Short2Math / All)
+echo   [5] Mix Audio ^& Sound Effects (mix_sfx.py)
+echo   [6] Test Local Kokoro AI Voice (test_kokoro.py)
+echo   [7] YouTube: OAuth Login (auth_login.py)
+echo   [8] YouTube: Upload Video (upload_youtube.py)
+echo   [9] YouTube: Schedule Video (schedule_youtube.py)
+echo   [10] Regenerate Remotion Registry (npm run gen)
 echo   [0] Exit
 echo.
 echo ================================================================
-set /p choice="Enter choice [0-9]: "
+set /p choice="Enter choice [0-10]: "
 
-if "%choice%"=="1" goto opt_studio
-if "%choice%"=="2" goto opt_voice
-if "%choice%"=="3" goto opt_render
-if "%choice%"=="4" goto opt_sfx
-if "%choice%"=="5" goto opt_test
-if "%choice%"=="6" goto opt_auth
-if "%choice%"=="7" goto opt_upload
-if "%choice%"=="8" goto opt_schedule
-if "%choice%"=="9" goto opt_gen
+if "%choice%"=="1" goto opt_web_ui
+if "%choice%"=="2" goto opt_studio
+if "%choice%"=="3" goto opt_voice
+if "%choice%"=="4" goto opt_render
+if "%choice%"=="5" goto opt_sfx
+if "%choice%"=="6" goto opt_test
+if "%choice%"=="7" goto opt_auth
+if "%choice%"=="8" goto opt_upload
+if "%choice%"=="9" goto opt_schedule
+if "%choice%"=="10" goto opt_gen
 if "%choice%"=="0" goto opt_exit
 
 echo.
 echo Invalid option selected.
 pause
 goto menu
+
+:opt_web_ui
+echo.
+echo ================================================================
+echo Starting VideoGenerator Web Studio on http://localhost:5000 ...
+echo ================================================================
+start "" cmd /c "timeout /t 1 /nobreak >nul && start http://localhost:5000"
+%PY_CMD% server.py
+goto check_return
 
 :opt_studio
 echo.

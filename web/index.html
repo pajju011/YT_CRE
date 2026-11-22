@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VideoGenerator Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --panel-hover: #1c2128;
+      --border: #30363d;
+      --border-focus: #58a6ff;
+      --text: #c9d1d9;
+      --text-bright: #f0f6fc;
+      --muted: #8b949e;
+      --primary: #6366F1;
+      --primary-hover: #4f46e5;
+      --primary-glow: rgba(99, 102, 241, 0.25);
+      --teal: #4db8a8;
+      --gold: #f5d76e;
+      --pink: #e8879f;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-display: 'Space Grotesk', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), var(--teal));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-family: var(--font-display);
+      font-size: 18px;
+    }
+    .logo-text {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--text-bright);
+      letter-spacing: -0.3px;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .btn:hover {
+      background: var(--panel-hover);
+      color: var(--text-bright);
+      border-color: #8b949e;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+      color: #fff;
+      box-shadow: 0 0 16px var(--primary-glow);
+    }
+    .btn-success {
+      background: #238636;
+      border-color: #2ea043;
+      color: #fff;
+    }
+    .btn-success:hover {
+      background: #2ea043;
+      color: #fff;
+    }
+
+    /* App Container Grid */
+    .app-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr 340px;
+      flex: 1;
+      height: calc(100vh - 57px);
+      overflow: hidden;
+    }
+
+    /* Sidebar: Project List */
+    .sidebar {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .sidebar-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sidebar-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .project-list {
+      list-style: none;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .project-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: background 0.15s ease;
+      border: 1px solid transparent;
+    }
+    .project-item:hover {
+      background: var(--panel-hover);
+    }
+    .project-item.active {
+      background: #21262d;
+      border-color: var(--primary);
+    }
+    .project-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-bright);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .project-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .badge-ready { background: rgba(77, 184, 168, 0.15); color: var(--teal); }
+    .badge-pending { background: rgba(245, 215, 110, 0.15); color: var(--gold); }
+
+    /* Center: Studio Editor */
+    .studio-panel {
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Pipeline Action Bar */
+    .action-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Beats Timeline Grid */
+    .beats-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .beat-card {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.15s ease;
+    }
+    .beat-card:hover {
+      border-color: #58a6ff;
+    }
+    .beat-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+    .beat-tag {
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .tag-hook { background: rgba(99, 102, 241, 0.2); color: var(--primary); }
+    .tag-setup { background: rgba(139, 148, 158, 0.2); color: var(--muted); }
+    .tag-quiz { background: rgba(245, 215, 110, 0.2); color: var(--gold); }
+    .tag-reveal { background: rgba(77, 184, 168, 0.2); color: var(--teal); }
+    .tag-twist { background: rgba(232, 135, 159, 0.2); color: var(--pink); }
+    .tag-loop { background: rgba(99, 102, 241, 0.2); color: var(--primary); }
+
+    .beat-timing {
+      font-family: var(--font-mono);
+      color: var(--muted);
+    }
+    .beat-input {
+      background: #161b22;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: var(--text-bright);
+      font-family: var(--font-body);
+      font-size: 13px;
+      width: 100%;
+      resize: vertical;
+    }
+    .beat-input:focus {
+      outline: none;
+      border-color: var(--border-focus);
+    }
+
+    /* Right: Preview Panel */
+    .preview-panel {
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 16px;
+      overflow-y: auto;
+    }
+    .video-viewport {
+      width: 100%;
+      aspect-ratio: 9 / 16;
+      max-height: 440px;
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+    .video-viewport video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .video-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      padding: 16px;
+    }
+
+    /* Audio Player */
+    .audio-player-card {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .audio-player-card audio {
+      width: 100%;
+      height: 32px;
+    }
+
+    /* Terminal Console Output */
+    .terminal-box {
+      background: #090d13;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #7ee787;
+      min-height: 140px;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 500px;
+      max-width: 90%;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-bright);
+    }
+    .form-input, .form-select {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text-bright);
+      font-size: 13px;
+    }
+    .form-input:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--border-focus);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="logo-group">
+      <div class="logo-icon">V</div>
+      <div>
+        <div class="logo-text">VideoGenerator Studio</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn" onclick="openRemotionStudio()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Open Remotion Studio
+      </button>
+      <button class="btn btn-primary" onclick="openNewModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        + New Short
+      </button>
+    </div>
+  </header>
+
+  <!-- App Layout -->
+  <div class="app-layout">
+
+    <!-- Left Sidebar: Project List -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Shorts Library</span>
+        <button class="btn" style="padding: 4px 8px; font-size: 11px;" onclick="loadProjects()">↻</button>
+      </div>
+      <ul class="project-list" id="projectList">
+        <!-- Rendered via JS -->
+      </ul>
+    </aside>
+
+    <!-- Center Studio: Project Beats & Pipeline Actions -->
+    <main class="studio-panel">
+
+      <!-- Project Header Card -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h1 class="card-title" id="curTitle">Select a Short</h1>
+            <div style="font-size: 12px; color: var(--muted); margin-top: 4px;" id="curMeta">Format: 1080×1920 (9:16) • 30 fps</div>
+          </div>
+          <button class="btn btn-primary" id="btnSaveBeats" onclick="saveCurrentBeats()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Beats
+          </button>
+        </div>
+
+        <!-- 1-Click Pipeline Controls -->
+        <div class="action-bar">
+          <button class="btn" id="btnVoice" onclick="generateVoice()">
+            🎙️ Generate Voice (Kokoro)
+          </button>
+          <button class="btn" id="btnCaptions" onclick="updateCaptions()">
+            ⚡ Sync Captions
+          </button>
+          <button class="btn btn-primary" id="btnRender" onclick="renderVideo()">
+            🎬 Render Video
+          </button>
+          <button class="btn" id="btnSfx" onclick="mixSfx()">
+            🔊 Mix SFX
+          </button>
+          <button class="btn btn-success" id="btnUpload" onclick="uploadYouTube()">
+            🚀 Upload to YouTube
+          </button>
+        </div>
+      </div>
+
+      <!-- Script & Beats Editor -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Narrative Beats & Voice Lines</span>
+          <span style="font-size: 12px; color: var(--muted);">Click any text to edit</span>
+        </div>
+        <div class="beats-container" id="beatsContainer">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+
+      <!-- Execution Console Output -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Execution Console</span>
+          <button class="btn" style="padding: 2px 8px; font-size: 11px;" onclick="clearConsole()">Clear</button>
+        </div>
+        <div class="terminal-box" id="consoleOutput">Ready. Select a short and click any pipeline action above.</div>
+      </div>
+
+    </main>
+
+    <!-- Right Panel: Video & Audio Preview & YouTube -->
+    <aside class="preview-panel">
+      
+      <!-- Video Player -->
+      <div style="font-size: 12px; font-weight: 700; color: var(--text-bright);">Video Preview</div>
+      <div class="video-viewport" id="videoViewport">
+        <div class="video-placeholder" id="videoPlaceholder">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <div>Render short to preview</div>
+        </div>
+        <video id="videoPlayer" controls style="display: none;"></video>
+      </div>
+
+      <!-- Audio Player -->
+      <div style="font-size: 12px; font-weight: 700; color: var(--text-bright);">Voice Narration</div>
+      <div class="audio-player-card">
+        <div style="font-size: 11px; color: var(--muted);" id="audioTrackLabel">voice.wav</div>
+        <audio id="audioPlayer" controls></audio>
+      </div>
+
+      <!-- Quick YouTube Publisher Card -->
+      <div class="card" style="padding: 14px; gap: 10px;">
+        <span class="card-title" style="font-size: 13px;">YouTube Publication</span>
+        <div class="form-group">
+          <label class="form-label">Video Title</label>
+          <input type="text" class="form-input" id="ytTitle" placeholder="Video Title...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tags (comma separated)</label>
+          <input type="text" class="form-input" id="ytTags" value="Shorts, AI, Viral">
+        </div>
+        <button class="btn btn-success" style="width: 100%; justify-content: center;" onclick="uploadYouTube()">
+          Publish Video
+        </button>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- Create New Short Modal -->
+  <div class="modal-overlay" id="newShortModal">
+    <div class="modal-box">
+      <h2 style="font-size: 16px; color: var(--text-bright);">Create New Short</h2>
+      <div class="form-group">
+        <label class="form-label">Short ID (e.g. short-13-crypto)</label>
+        <input type="text" class="form-input" id="newId" placeholder="short-13-topic">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Video Title</label>
+        <input type="text" class="form-input" id="newTitle" placeholder="The Math Trick That Broke History">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Niche / Track</label>
+        <select class="form-select" id="newTrack">
+          <option value="math">TSX: Math / Science</option>
+          <option value="dev">TSX: Dev Tips / Code</option>
+          <option value="finance">TSX: Finance / Money</option>
+          <option value="vox">Collage: Vox Documentary</option>
+        </select>
+      </div>
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+        <button class="btn" onclick="closeNewModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="submitNewShort()">Create Short</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentProject = null;
+    let projectsData = [];
+
+    // Load projects on start
+    async function loadProjects() {
+      try {
+        const res = await fetch('/api/projects');
+        projectsData = await res.json();
+        renderProjectList();
+        if (projectsData.length > 0 && !currentProject) {
+          selectProject(projectsData[0].id);
+        }
+      } catch (err) {
+        logConsole('Error loading projects: ' + err);
+      }
+    }
+
+    function renderProjectList() {
+      const list = document.getElementById('projectList');
+      list.innerHTML = '';
+      projectsData.forEach(p => {
+        const li = document.createElement('li');
+        li.className = 'project-item' + (currentProject && currentProject.id === p.id ? ' active' : '');
+        li.onclick = () => selectProject(p.id);
+        li.innerHTML = `
+          <div class="project-title">${p.title || p.id}</div>
+          <div class="project-meta">
+            <span>${p.durationSec || 40}s</span>
+            ${p.hasVoice ? '<span class="badge badge-ready">Voice ✓</span>' : '<span class="badge badge-pending">No Voice</span>'}
+            ${p.hasVideo ? '<span class="badge badge-ready">Video ✓</span>' : ''}
+          </div>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    async function selectProject(id) {
+      logConsole(`Loading project: ${id}...`);
+      try {
+        const res = await fetch(`/api/project?id=${id}`);
+        currentProject = await res.json();
+        renderProjectList();
+        renderCurrentProject();
+      } catch (err) {
+        logConsole('Failed to load project: ' + err);
+      }
+    }
+
+    function renderCurrentProject() {
+      if (!currentProject) return;
+      document.getElementById('curTitle').innerText = currentProject.title || currentProject.id;
+      document.getElementById('curMeta').innerText = 
+        `ID: ${currentProject.id} • ${currentProject.durationSec || 40}s • 1080×1920 (30fps)`;
+
+      document.getElementById('ytTitle').value = currentProject.title || '';
+
+      // Render Beats
+      const container = document.getElementById('beatsContainer');
+      container.innerHTML = '';
+      const beats = (currentProject.beats && currentProject.beats.vo) || [];
+
+      beats.forEach((b, idx) => {
+        const card = document.createElement('div');
+        card.className = 'beat-card';
+        const tagClass = 'tag-' + (b.beat || 'setup');
+        card.innerHTML = `
+          <div class="beat-header">
+            <span class="beat-tag ${tagClass}">${b.beat || 'line ' + (idx + 1)}</span>
+            <span class="beat-timing">${b.start || 0}s → ${b.end || 0}s</span>
+          </div>
+          <textarea class="beat-input" rows="2" data-idx="${idx}">${b.text || ''}</textarea>
+        `;
+        container.appendChild(card);
+      });
+
+      // Update Audio Preview
+      const audioPlayer = document.getElementById('audioPlayer');
+      if (currentProject.voiceUrl) {
+        audioPlayer.src = currentProject.voiceUrl + '?t=' + Date.now();
+        document.getElementById('audioTrackLabel').innerText = 'voice.wav (Available)';
+      } else {
+        audioPlayer.removeAttribute('src');
+        document.getElementById('audioTrackLabel').innerText = 'voice.wav (Not generated yet)';
+      }
+
+      // Update Video Preview
+      const videoPlayer = document.getElementById('videoPlayer');
+      const placeholder = document.getElementById('videoPlaceholder');
+      if (currentProject.videoUrl) {
+        videoPlayer.src = currentProject.videoUrl + '?t=' + Date.now();
+        videoPlayer.style.display = 'block';
+        placeholder.style.display = 'none';
+      } else {
+        videoPlayer.removeAttribute('src');
+        videoPlayer.style.display = 'none';
+        placeholder.style.display = 'flex';
+      }
+    }
+
+    async function saveCurrentBeats() {
+      if (!currentProject) return;
+      const textareas = document.querySelectorAll('.beat-input');
+      textareas.forEach(ta => {
+        const idx = parseInt(ta.getAttribute('data-idx'));
+        if (currentProject.beats.vo[idx]) {
+          currentProject.beats.vo[idx].text = ta.value;
+        }
+      });
+
+      logConsole('Saving beats.json...');
+      try {
+        const res = await fetch('/api/save-beats', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: currentProject.id, beats: currentProject.beats })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          logConsole('✓ beats.json saved successfully!');
+        } else {
+          logConsole('Error: ' + data.error);
+        }
+      } catch (err) {
+        logConsole('Error saving: ' + err);
+      }
+    }
+
+    async function generateVoice() {
+      if (!currentProject) return;
+      logConsole(`🎙️ Starting Kokoro voice generation for ${currentProject.id}...`);
+      setButtonsDisabled(true);
+      try {
+        const res = await fetch('/api/generate-voice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: currentProject.id })
+        });
+        const data = await res.json();
+        logConsole(data.output || data.message || 'Done');
+        await selectProject(currentProject.id);
+      } catch (err) {
+        logConsole('Voice gen failed: ' + err);
+      } finally {
+        setButtonsDisabled(false);
+      }
+    }
+
+    async function updateCaptions() {
+      if (!currentProject) return;
+      logConsole(`⚡ Syncing captions for ${currentProject.id}...`);
+      try {
+        const res = await fetch('/api/sync-captions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: currentProject.id })
+        });
+        const data = await res.json();
+        logConsole(data.output || 'Captions updated!');
+      } catch (err) {
+        logConsole('Caption sync failed: ' + err);
+      }
+    }
+
+    async function renderVideo() {
+      if (!currentProject) return;
+      logConsole(`🎬 Rendering composition for ${currentProject.id}... This will take ~30-60s.`);
+      setButtonsDisabled(true);
+      try {
+        const res = await fetch('/api/render', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: currentProject.id })
+        });
+        const data = await res.json();
+        logConsole(data.output || 'Render completed!');
+        await selectProject(currentProject.id);
+      } catch (err) {
+        logConsole('Render failed: ' + err);
+      } finally {
+        setButtonsDisabled(false);
+      }
+    }
+
+    async function mixSfx() {
+      if (!currentProject) return;
+      logConsole(`🔊 Mixing SFX for ${currentProject.id}...`);
+      try {
+        const res = await fetch('/api/mix-sfx', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: currentProject.id })
+        });
+        const data = await res.json();
+        logConsole(data.output || 'SFX mixed!');
+        await selectProject(currentProject.id);
+      } catch (err) {
+        logConsole('SFX mix failed: ' + err);
+      }
+    }
+
+    async function uploadYouTube() {
+      if (!currentProject) return;
+      const title = document.getElementById('ytTitle').value;
+      const tags = document.getElementById('ytTags').value;
+      if (!confirm(`Are you ready to upload "${title}" to YouTube?`)) return;
+      logConsole(`🚀 Uploading to YouTube...`);
+      try {
+        const res = await fetch('/api/youtube-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: currentProject.id, title, tags })
+        });
+        const data = await res.json();
+        logConsole(data.output || 'Upload initiated!');
+      } catch (err) {
+        logConsole('Upload failed: ' + err);
+      }
+    }
+
+    function openRemotionStudio() {
+      window.open('http://localhost:3000', '_blank');
+      logConsole('Opening Remotion Studio in new tab (Make sure npm run studio is running).');
+    }
+
+    function setButtonsDisabled(disabled) {
+      document.querySelectorAll('.action-bar button').forEach(b => b.disabled = disabled);
+    }
+
+    function logConsole(text) {
+      const box = document.getElementById('consoleOutput');
+      const time = new Date().toLocaleTimeString();
+      box.innerText += `\n[${time}] ${text}`;
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function clearConsole() {
+      document.getElementById('consoleOutput').innerText = 'Console cleared.';
+    }
+
+    function openNewModal() {
+      document.getElementById('newShortModal').classList.add('active');
+    }
+    function closeNewModal() {
+      document.getElementById('newShortModal').classList.remove('active');
+    }
+
+    async function submitNewShort() {
+      const id = document.getElementById('newId').value.trim();
+      const title = document.getElementById('newTitle').value.trim();
+      const track = document.getElementById('newTrack').value;
+      if (!id || !title) {
+        alert('Please provide an ID and Title');
+        return;
+      }
+      try {
+        const res = await fetch('/api/create-short', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, title, track })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          closeNewModal();
+          await loadProjects();
+          selectProject(id);
+        } else {
+          alert('Error: ' + data.error);
+        }
+      } catch (err) {
+        alert('Failed: ' + err);
+      }
+    }
+
+    // Initialize
+    loadProjects();
+  </script>
+</body>
+</html>
