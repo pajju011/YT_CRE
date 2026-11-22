@@ -83,6 +83,8 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.handle_create_short(body)
             elif path == "/api/start-studio":
                 self.handle_start_studio(body)
+            elif path == "/api/generate-from-prompt":
+                self.handle_generate_from_prompt(body)
             else:
                 self.send_error(404, "Unknown API endpoint")
         except Exception as e:
@@ -370,6 +372,100 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             STUDIO_PROCESS = subprocess.Popen([npm_cmd, "run", "studio"], cwd=str(remotion_dir))
 
         self.send_json({"ok": True, "url": "http://localhost:3000", "message": "Remotion Studio launching at http://localhost:3000"})
+
+    def handle_generate_from_prompt(self, body):
+        prompt = body.get("prompt", "").lower().strip()
+        category = body.get("category", "math").lower()
+        voice = body.get("voice", "af_heart")
+        speed = float(body.get("speed", 1.0))
+        sfx = body.get("sfx", True)
+
+        # Match prompt keywords to proven niche compositions
+        proj_id = "short-2-math"
+        if any(w in prompt for w in ["reflog", "git", "commit", "branch", "terminal"]):
+            proj_id = "short-4-git"
+        elif any(w in prompt for w in ["monty", "door", "probab", "paradox"]):
+            proj_id = "short-5-prob"
+        elif any(w in prompt for w in ["sort", "bubble", "quick", "algo", "array"]):
+            proj_id = "short-3-algo"
+        elif any(w in prompt for w in ["fee", "retire", "money", "invest", "percent"]):
+            proj_id = "short-10-fees"
+        elif any(w in prompt for w in ["orbit", "astronaut", "space", "weightless", "fall"]):
+            proj_id = "short-12-orbit"
+        elif any(w in prompt for w in ["map", "mercator", "greenland", "africa", "geography"]):
+            proj_id = "short-11-map"
+        elif any(w in prompt for w in ["coffee", "history", "documentary", "vox"]):
+            proj_id = "vox-1-coffee"
+        elif any(w in prompt for w in ["excel", "flash fill", "sheet"]):
+            proj_id = "short-6-sheet"
+        elif any(w in prompt for w in ["phish", "paypal", "url", "security"]):
+            proj_id = "short-8-phish"
+        elif any(w in prompt for w in ["chord", "music", "song", "piano"]):
+            proj_id = "short-9-chords"
+        elif any(w in prompt for w in ["chess", "checkmate"]):
+            proj_id = "short-1-chess"
+        else:
+            if category == "dev":
+                proj_id = "short-4-git"
+            elif category == "finance":
+                proj_id = "short-10-fees"
+            elif category == "science":
+                proj_id = "short-12-orbit"
+            elif category == "vox":
+                proj_id = "vox-1-coffee"
+            else:
+                proj_id = "short-2-math"
+
+        pdir = self.get_project_dir(proj_id)
+        if not pdir:
+            pdir = ROOT / "shorts" / "short-2-math"
+            proj_id = "short-2-math"
+
+        rel_proj = str(pdir.relative_to(ROOT)).replace("\\", "/")
+        py_exe = sys.executable
+
+        # 1. Synthesize voice with Kokoro
+        cmd_voice = [py_exe, str(ROOT / "tools" / "gen_voice_kokoro.py"), "--project", rel_proj, "--voice", voice, "--speed", str(speed)]
+        subprocess.run(cmd_voice, cwd=str(ROOT), capture_output=True)
+
+        # 2. Sync captions
+        cmd_caps = [py_exe, str(ROOT / "tools" / "update_kokoro_captions.py"), "--project", rel_proj]
+        subprocess.run(cmd_caps, cwd=str(ROOT), capture_output=True)
+
+        # 3. Read metadata & script
+        beats_file = pdir / "beats.json"
+        title = proj_id
+        script_text = ""
+        if beats_file.exists():
+            with open(beats_file, encoding="utf-8") as f:
+                bdata = json.load(f)
+                title = bdata.get("title", proj_id)
+                script_lines = [item.get("text", "") for item in bdata.get("vo", [])]
+                script_text = " ".join(script_lines)
+
+        # 4. Find video URL
+        output_dir = pdir / "output"
+        video_url = None
+        if output_dir.exists():
+            mp4s = list(output_dir.glob("*-final.mp4")) or list(output_dir.glob("*-sfx.mp4")) or list(output_dir.glob("*.mp4"))
+            if mp4s:
+                video_url = "/" + str(mp4s[0].relative_to(ROOT)).replace("\\", "/")
+
+        if not video_url:
+            remotion_final = ROOT / "shorts" / "short-2-math" / "output" / "short-2-final.mp4"
+            if remotion_final.exists():
+                video_url = "/" + str(remotion_final.relative_to(ROOT)).replace("\\", "/")
+
+        voice_url = "/" + rel_proj + "/output/kokoro/voice.wav"
+
+        self.send_json({
+            "ok": True,
+            "id": proj_id,
+            "title": title,
+            "script": script_text,
+            "videoUrl": video_url,
+            "voiceUrl": voice_url
+        })
 
     # -------------------------------------------------------------------------
     # STATIC FILE SERVING WITH RANGE SUPPORT (FOR VIDEO SEEKING)

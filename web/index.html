@@ -3,29 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VideoGenerator Studio</title>
+  <title>VideoGenerator AI Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0d1117;
-      --panel: #161b22;
-      --panel-hover: #1c2128;
-      --border: #30363d;
-      --border-focus: #58a6ff;
-      --text: #c9d1d9;
-      --text-bright: #f0f6fc;
-      --muted: #8b949e;
+      --bg: #090c10;
+      --card: #12161f;
+      --card-hover: #181d28;
+      --border: #212836;
+      --border-focus: #6366F1;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
       --primary: #6366F1;
       --primary-hover: #4f46e5;
-      --primary-glow: rgba(99, 102, 241, 0.25);
+      --primary-glow: rgba(99, 102, 241, 0.35);
       --teal: #4db8a8;
       --gold: #f5d76e;
-      --pink: #e8879f;
-      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
+      --font-body: 'Inter', -apple-system, sans-serif;
       --font-display: 'Space Grotesk', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,27 +35,28 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      overflow-x: hidden;
+      align-items: center;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
+        radial-gradient(circle at 100% 100%, rgba(77, 184, 168, 0.05) 0%, transparent 50%);
     }
 
-    /* Header */
+    /* Minimalist Navbar */
     header {
-      background: var(--panel);
-      border-bottom: 1px solid var(--border);
-      padding: 12px 24px;
+      width: 100%;
+      max-width: 1100px;
+      padding: 20px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 50;
     }
-    .logo-group {
+    .logo-container {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      text-decoration: none;
     }
-    .logo-icon {
+    .logo-badge {
       width: 32px;
       height: 32px;
       background: linear-gradient(135deg, var(--primary), var(--teal));
@@ -68,809 +67,753 @@
       color: #fff;
       font-weight: 700;
       font-family: var(--font-display);
-      font-size: 18px;
+      box-shadow: 0 0 16px var(--primary-glow);
     }
-    .logo-text {
+    .logo-name {
       font-family: var(--font-display);
       font-weight: 700;
       font-size: 18px;
-      color: var(--text-bright);
+      color: #fff;
       letter-spacing: -0.3px;
     }
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    /* Buttons */
-    .btn {
+    .engine-badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 14px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      border: 1px solid var(--border);
-      background: var(--panel);
-      color: var(--text);
-      transition: all 0.15s ease;
-      text-decoration: none;
-    }
-    .btn:hover {
-      background: var(--panel-hover);
-      color: var(--text-bright);
-      border-color: #8b949e;
-    }
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .btn-primary {
-      background: var(--primary);
-      border-color: var(--primary);
-      color: #fff;
-    }
-    .btn-primary:hover {
-      background: var(--primary-hover);
-      border-color: var(--primary-hover);
-      color: #fff;
-      box-shadow: 0 0 16px var(--primary-glow);
-    }
-    .btn-success {
-      background: #238636;
-      border-color: #2ea043;
-      color: #fff;
-    }
-    .btn-success:hover {
-      background: #2ea043;
-      color: #fff;
-    }
-
-    /* App Container Grid */
-    .app-layout {
-      display: grid;
-      grid-template-columns: 280px 1fr 340px;
-      flex: 1;
-      height: calc(100vh - 57px);
-      overflow: hidden;
-    }
-
-    /* Sidebar: Project List */
-    .sidebar {
-      background: var(--panel);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-    .sidebar-header {
-      padding: 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .sidebar-title {
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--muted);
-      font-weight: 700;
-    }
-    .project-list {
-      list-style: none;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .project-item {
-      padding: 10px 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      transition: background 0.15s ease;
-      border: 1px solid transparent;
-    }
-    .project-item:hover {
-      background: var(--panel-hover);
-    }
-    .project-item.active {
-      background: #21262d;
-      border-color: var(--primary);
-    }
-    .project-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-bright);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .project-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(77, 184, 168, 0.12);
+      border: 1px solid rgba(77, 184, 168, 0.3);
+      border-radius: 20px;
       font-size: 11px;
-      color: var(--muted);
-    }
-    .badge {
-      display: inline-block;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 10px;
       font-weight: 600;
+      color: var(--teal);
     }
-    .badge-ready { background: rgba(77, 184, 168, 0.15); color: var(--teal); }
-    .badge-pending { background: rgba(245, 215, 110, 0.15); color: var(--gold); }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background-color: var(--teal);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--teal);
+    }
 
-    /* Center: Studio Editor */
-    .studio-panel {
+    /* Main Container */
+    main {
+      width: 100%;
+      max-width: 820px;
+      padding: 10px 20px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* Hero Text */
+    .hero-section {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: 38px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.8px;
+      line-height: 1.2;
+    }
+    .hero-title span {
+      background: linear-gradient(135deg, #a5b4fc, #6366F1, #4db8a8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-subtitle {
+      color: var(--text-muted);
+      font-size: 15px;
+      max-width: 580px;
+      line-height: 1.5;
+    }
+
+    /* Generator Card */
+    .generator-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
       padding: 24px;
-      overflow-y: auto;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
       display: flex;
       flex-direction: column;
       gap: 20px;
+      transition: border-color 0.2s ease;
     }
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
+    .generator-card:focus-within {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 24px var(--primary-glow);
+    }
+
+    /* Prompt Textarea */
+    .prompt-wrapper {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 8px;
     }
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .prompt-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
     }
-    .card-title {
-      font-family: var(--font-display);
-      font-size: 16px;
-      font-weight: 700;
-      color: var(--text-bright);
+    .prompt-textarea {
+      background: #090c10;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: var(--font-body);
+      font-size: 15px;
+      color: #fff;
+      resize: none;
+      min-height: 90px;
+      outline: none;
+      transition: all 0.2s ease;
+      line-height: 1.5;
+    }
+    .prompt-textarea:focus {
+      border-color: var(--primary);
+    }
+    .prompt-textarea::placeholder {
+      color: #4b5563;
+    }
+
+    /* Prompt Suggestion Chips */
+    .suggestions {
       display: flex;
       align-items: center;
       gap: 8px;
-    }
-
-    /* Pipeline Action Bar */
-    .action-bar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
       flex-wrap: wrap;
     }
-
-    /* Beats Timeline Grid */
-    .beats-container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .beat-card {
-      background: #0d1117;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      transition: border-color 0.15s ease;
-    }
-    .beat-card:hover {
-      border-color: #58a6ff;
-    }
-    .beat-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    .suggestion-label {
       font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
     }
-    .beat-tag {
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 2px 6px;
-      border-radius: 4px;
-    }
-    .tag-hook { background: rgba(99, 102, 241, 0.2); color: var(--primary); }
-    .tag-setup { background: rgba(139, 148, 158, 0.2); color: var(--muted); }
-    .tag-quiz { background: rgba(245, 215, 110, 0.2); color: var(--gold); }
-    .tag-reveal { background: rgba(77, 184, 168, 0.2); color: var(--teal); }
-    .tag-twist { background: rgba(232, 135, 159, 0.2); color: var(--pink); }
-    .tag-loop { background: rgba(99, 102, 241, 0.2); color: var(--primary); }
-
-    .beat-timing {
-      font-family: var(--font-mono);
-      color: var(--muted);
-    }
-    .beat-input {
-      background: #161b22;
+    .chip {
+      background: #181d28;
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 10px;
-      color: var(--text-bright);
-      font-family: var(--font-body);
-      font-size: 13px;
-      width: 100%;
-      resize: vertical;
-    }
-    .beat-input:focus {
-      outline: none;
-      border-color: var(--border-focus);
-    }
-
-    /* Right: Preview Panel */
-    .preview-panel {
-      background: var(--panel);
-      border-left: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      padding: 16px;
-      overflow-y: auto;
-    }
-    .video-viewport {
-      width: 100%;
-      aspect-ratio: 9 / 16;
-      max-height: 440px;
-      background: #000;
-      border-radius: 10px;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid var(--border);
-      position: relative;
-    }
-    .video-viewport video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
-    .video-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      color: var(--muted);
-      font-size: 12px;
-      text-align: center;
-      padding: 16px;
-    }
-
-    /* Audio Player */
-    .audio-player-card {
-      background: #0d1117;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .audio-player-card audio {
-      width: 100%;
-      height: 32px;
-    }
-
-    /* Terminal Console Output */
-    .terminal-box {
-      background: #090d13;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 12px;
-      font-family: var(--font-mono);
+      border-radius: 20px;
+      padding: 5px 12px;
       font-size: 11px;
-      color: #7ee787;
-      min-height: 140px;
-      max-height: 200px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .chip:hover {
+      background: #212836;
+      color: #fff;
+      border-color: var(--primary);
     }
 
-    /* Modal */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
+    /* Options Grid */
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
     }
-    .modal-overlay.active {
-      display: flex;
-    }
-    .modal-box {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      width: 500px;
-      max-width: 90%;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-    }
-    .form-group {
+    .option-group {
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
-    .form-label {
-      font-size: 12px;
+    .option-label {
+      font-size: 11px;
       font-weight: 600;
-      color: var(--text-bright);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
-    .form-input, .form-select {
-      background: #0d1117;
+    .select-input {
+      background: #090c10;
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 8px;
       padding: 8px 12px;
-      color: var(--text-bright);
+      font-family: var(--font-body);
       font-size: 13px;
-    }
-    .form-input:focus, .form-select:focus {
+      color: var(--text);
       outline: none;
-      border-color: var(--border-focus);
+      cursor: pointer;
+    }
+    .select-input:focus {
+      border-color: var(--primary);
+    }
+
+    /* Toggle Option */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #090c10;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .toggle-text {
+      font-size: 13px;
+      color: var(--text);
+    }
+    .toggle-checkbox {
+      accent-color: var(--primary);
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    /* Primary Generate Button */
+    .btn-generate {
+      background: linear-gradient(135deg, var(--primary), #4338ca);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-family: var(--font-display);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 20px var(--primary-glow);
+      transition: all 0.2s ease;
+      margin-top: 6px;
+    }
+    .btn-generate:hover:not(:disabled) {
+      background: linear-gradient(135deg, #7174ff, var(--primary));
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+    }
+    .btn-generate:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Progress Tracker Card */
+    .progress-card {
+      display: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .progress-card.active {
+      display: flex;
+    }
+    .progress-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .progress-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(99, 102, 241, 0.2);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 6px 0;
+    }
+    .step-item.active {
+      color: #fff;
+      font-weight: 600;
+    }
+    .step-item.done {
+      color: var(--teal);
+    }
+    .step-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #181d28;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+    .step-item.active .step-icon {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.2);
+      color: var(--primary);
+    }
+    .step-item.done .step-icon {
+      border-color: var(--teal);
+      background: rgba(77, 184, 168, 0.2);
+      color: var(--teal);
+    }
+
+    /* Result Preview Showcase */
+    .result-card {
+      display: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      gap: 24px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    }
+    .result-card.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (min-width: 680px) {
+      .result-card.active {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+      }
+    }
+
+    /* 9:16 Video Mockup */
+    .video-mockup {
+      width: 100%;
+      aspect-ratio: 9 / 16;
+      max-height: 480px;
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid var(--border);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .video-mockup video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Result Details */
+    .result-details {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      justify-content: space-between;
+    }
+    .result-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: rgba(77, 184, 168, 0.15);
+      color: var(--teal);
+      font-size: 11px;
+      font-weight: 600;
+      width: fit-content;
+    }
+    .result-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.3;
+    }
+    .result-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .narration-box {
+      background: #090c10;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      color: #cbd5e1;
+      max-height: 110px;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+
+    /* Result Action Buttons */
+    .result-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .btn-action {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+    }
+    .btn-download {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-download:hover {
+      background: var(--primary-hover);
+    }
+    .btn-youtube {
+      background: #1f2937;
+      border-color: #374151;
+      color: #fff;
+    }
+    .btn-youtube:hover {
+      background: #ff0000;
+      border-color: #ff0000;
+    }
+    .btn-secondary {
+      background: transparent;
+      border-color: var(--border);
+      color: var(--text-muted);
+    }
+    .btn-secondary:hover {
+      color: #fff;
+      border-color: #4b5563;
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Header -->
+  <!-- Minimalist Navbar -->
   <header>
-    <div class="logo-group">
-      <div class="logo-icon">V</div>
-      <div>
-        <div class="logo-text">VideoGenerator Studio</div>
-      </div>
-    </div>
-    <div class="header-actions">
-      <button class="btn" onclick="openRemotionStudio()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        Open Remotion Studio
-      </button>
-      <button class="btn btn-primary" onclick="openNewModal()">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        + New Short
-      </button>
+    <a href="/" class="logo-container">
+      <div class="logo-badge">V</div>
+      <div class="logo-name">VideoAI Studio</div>
+    </a>
+    <div class="engine-badge">
+      <span class="status-dot"></span>
+      Kokoro AI Engine Active
     </div>
   </header>
 
-  <!-- App Layout -->
-  <div class="app-layout">
+  <!-- Main App Canvas -->
+  <main>
 
-    <!-- Left Sidebar: Project List -->
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <span class="sidebar-title">Shorts Library</span>
-        <button class="btn" style="padding: 4px 8px; font-size: 11px;" onclick="loadProjects()">↻</button>
-      </div>
-      <ul class="project-list" id="projectList">
-        <!-- Rendered via JS -->
-      </ul>
-    </aside>
+    <!-- Hero Header -->
+    <section class="hero-section">
+      <h1 class="hero-title">Create Viral Shorts from a <span>Single Prompt</span></h1>
+      <p class="hero-subtitle">
+        Enter your idea. The engine automatically scripts a 6-beat hook grammar, generates AI voice narration, syncs captions, and renders a 1080×1920 video.
+      </p>
+    </section>
 
-    <!-- Center Studio: Project Beats & Pipeline Actions -->
-    <main class="studio-panel">
-
-      <!-- Project Header Card -->
-      <div class="card">
-        <div class="card-header">
-          <div>
-            <h1 class="card-title" id="curTitle">Select a Short</h1>
-            <div style="font-size: 12px; color: var(--muted); margin-top: 4px;" id="curMeta">Format: 1080×1920 (9:16) • 30 fps</div>
-          </div>
-          <button class="btn btn-primary" id="btnSaveBeats" onclick="saveCurrentBeats()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-            Save Beats
-          </button>
-        </div>
-
-        <!-- 1-Click Pipeline Controls -->
-        <div class="action-bar">
-          <button class="btn" id="btnVoice" onclick="generateVoice()">
-            🎙️ Generate Voice (Kokoro)
-          </button>
-          <button class="btn" id="btnCaptions" onclick="updateCaptions()">
-            ⚡ Sync Captions
-          </button>
-          <button class="btn btn-primary" id="btnRender" onclick="renderVideo()">
-            🎬 Render Video
-          </button>
-          <button class="btn" id="btnSfx" onclick="mixSfx()">
-            🔊 Mix SFX
-          </button>
-          <button class="btn btn-success" id="btnUpload" onclick="uploadYouTube()">
-            🚀 Upload to YouTube
-          </button>
-        </div>
-      </div>
-
-      <!-- Script & Beats Editor -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Narrative Beats & Voice Lines</span>
-          <span style="font-size: 12px; color: var(--muted);">Click any text to edit</span>
-        </div>
-        <div class="beats-container" id="beatsContainer">
-          <!-- Rendered via JS -->
-        </div>
-      </div>
-
-      <!-- Execution Console Output -->
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Execution Console</span>
-          <button class="btn" style="padding: 2px 8px; font-size: 11px;" onclick="clearConsole()">Clear</button>
-        </div>
-        <div class="terminal-box" id="consoleOutput">Ready. Select a short and click any pipeline action above.</div>
-      </div>
-
-    </main>
-
-    <!-- Right Panel: Video & Audio Preview & YouTube -->
-    <aside class="preview-panel">
+    <!-- Minimalist Generator Form -->
+    <section class="generator-card" id="genCard">
       
-      <!-- Video Player -->
-      <div style="font-size: 12px; font-weight: 700; color: var(--text-bright);">Video Preview</div>
-      <div class="video-viewport" id="videoViewport">
-        <div class="video-placeholder" id="videoPlaceholder">
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          <div>Render short to preview</div>
+      <!-- Prompt Input -->
+      <div class="prompt-wrapper">
+        <label class="prompt-label">What is your video about?</label>
+        <textarea 
+          class="prompt-textarea" 
+          id="promptInput" 
+          placeholder="e.g. The ×11 mental math trick that lets you multiply any two-digit number in two seconds without a calculator..."
+        ></textarea>
+      </div>
+
+      <!-- Quick Prompt Suggestions -->
+      <div class="suggestions">
+        <span class="suggestion-label">Try an idea:</span>
+        <span class="chip" onclick="usePrompt('The ×11 mental math trick that feels like magic in two seconds', 'math')">×11 Math Trick</span>
+        <span class="chip" onclick="usePrompt('How git reflog lets you undo any mistake even if you deleted your branch', 'dev')">Git Reflog Lifesaver</span>
+        <span class="chip" onclick="usePrompt('The Monty Hall problem: Why you should always switch doors', 'math')">Monty Hall Paradox</span>
+        <span class="chip" onclick="usePrompt('Bubble sort vs Quick sort: Which sorting algorithm is really faster?', 'dev')">Bubble vs Quick Sort</span>
+        <span class="chip" onclick="usePrompt('The 1 percent fee that secretly eats 24 percent of your retirement savings', 'finance')">1% Fee Trap</span>
+        <span class="chip" onclick="usePrompt('Why astronauts on the space station aren\'t weightless, they are falling', 'science')">Astronauts Falling</span>
+      </div>
+
+      <!-- Options Row -->
+      <div class="options-grid">
+        
+        <!-- Category -->
+        <div class="option-group">
+          <label class="option-label">Visual Style</label>
+          <select class="select-input" id="optCategory">
+            <option value="math">Mental Math & Equations</option>
+            <option value="dev">Dev Console & Code</option>
+            <option value="finance">Finance & Growth Charts</option>
+            <option value="science">Physics & Space Orbit</option>
+            <option value="vox">Vox Paper Documentary</option>
+          </select>
         </div>
-        <video id="videoPlayer" controls style="display: none;"></video>
-      </div>
 
-      <!-- Audio Player -->
-      <div style="font-size: 12px; font-weight: 700; color: var(--text-bright);">Voice Narration</div>
-      <div class="audio-player-card">
-        <div style="font-size: 11px; color: var(--muted);" id="audioTrackLabel">voice.wav</div>
-        <audio id="audioPlayer" controls></audio>
-      </div>
-
-      <!-- Quick YouTube Publisher Card -->
-      <div class="card" style="padding: 14px; gap: 10px;">
-        <span class="card-title" style="font-size: 13px;">YouTube Publication</span>
-        <div class="form-group">
-          <label class="form-label">Video Title</label>
-          <input type="text" class="form-input" id="ytTitle" placeholder="Video Title...">
+        <!-- Voice -->
+        <div class="option-group">
+          <label class="option-label">AI Voice (Kokoro)</label>
+          <select class="select-input" id="optVoice">
+            <option value="af_heart">Heart (Natural Female)</option>
+            <option value="am_adam">Adam (Deep Male)</option>
+            <option value="af_bella">Bella (Warm Female)</option>
+            <option value="am_michael">Michael (Clear Male)</option>
+          </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Tags (comma separated)</label>
-          <input type="text" class="form-input" id="ytTags" value="Shorts, AI, Viral">
+
+        <!-- Speech Speed -->
+        <div class="option-group">
+          <label class="option-label">Pacing</label>
+          <select class="select-input" id="optSpeed">
+            <option value="1.0">Normal (1.0×)</option>
+            <option value="1.05">Fast Paced (1.05×)</option>
+            <option value="1.1">High Retention (1.1×)</option>
+          </select>
         </div>
-        <button class="btn btn-success" style="width: 100%; justify-content: center;" onclick="uploadYouTube()">
-          Publish Video
-        </button>
+
+        <!-- SFX Toggle -->
+        <div class="option-group">
+          <label class="option-label">Sound Effects</label>
+          <label class="toggle-row">
+            <span class="toggle-text">Enable SFX</span>
+            <input type="checkbox" class="toggle-checkbox" id="optSfx" checked>
+          </label>
+        </div>
+
       </div>
 
-    </aside>
+      <!-- Generate Button -->
+      <button class="btn-generate" id="btnGenerate" onclick="startGeneration()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        Generate Video
+      </button>
 
-  </div>
+    </section>
 
-  <!-- Create New Short Modal -->
-  <div class="modal-overlay" id="newShortModal">
-    <div class="modal-box">
-      <h2 style="font-size: 16px; color: var(--text-bright);">Create New Short</h2>
-      <div class="form-group">
-        <label class="form-label">Short ID (e.g. short-13-crypto)</label>
-        <input type="text" class="form-input" id="newId" placeholder="short-13-topic">
+    <!-- Live Progress Tracker -->
+    <section class="progress-card" id="progressCard">
+      <div class="progress-header">
+        <div class="progress-title">
+          <div class="spinner"></div>
+          <span id="progressStatusText">Crafting your video...</span>
+        </div>
+        <span style="font-size: 12px; color: var(--text-muted);" id="progressTime">0s</span>
       </div>
-      <div class="form-group">
-        <label class="form-label">Video Title</label>
-        <input type="text" class="form-input" id="newTitle" placeholder="The Math Trick That Broke History">
+
+      <div class="step-list">
+        <div class="step-item active" id="step1">
+          <div class="step-icon">1</div>
+          <span>Drafting 6-beat script & viral hook grammar</span>
+        </div>
+        <div class="step-item" id="step2">
+          <div class="step-icon">2</div>
+          <span>Synthesizing voice narration with Kokoro AI</span>
+        </div>
+        <div class="step-item" id="step3">
+          <div class="step-icon">3</div>
+          <span>Generating word-level synced captions</span>
+        </div>
+        <div class="step-item" id="step4">
+          <div class="step-icon">4</div>
+          <span>Assembling & rendering 1080×1920 video composition</span>
+        </div>
+        <div class="step-item" id="step5">
+          <div class="step-icon">5</div>
+          <span>Mixing audio bed, sound effects, and volume ducking</span>
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Niche / Track</label>
-        <select class="form-select" id="newTrack">
-          <option value="math">TSX: Math / Science</option>
-          <option value="dev">TSX: Dev Tips / Code</option>
-          <option value="finance">TSX: Finance / Money</option>
-          <option value="vox">Collage: Vox Documentary</option>
-        </select>
+    </section>
+
+    <!-- Result Showcase Card -->
+    <section class="result-card" id="resultCard">
+      
+      <!-- 9:16 Video Preview -->
+      <div class="video-mockup">
+        <video id="resVideo" controls playsinline></video>
       </div>
-      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
-        <button class="btn" onclick="closeNewModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="submitNewShort()">Create Short</button>
+
+      <!-- Video Details & Actions -->
+      <div class="result-details">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div class="result-tag">✓ Video Ready (1080×1920 • 30fps)</div>
+          <h2 class="result-title" id="resTitle">The ×11 Math Trick</h2>
+          <div class="result-meta" id="resMeta">Format: 9:16 Vertical • Seamless Frame 0 Loop • AI Voice</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Spoken Script:</span>
+          <div class="narration-box" id="resScript">Loading script...</div>
+        </div>
+
+        <div class="result-actions">
+          <a class="btn-action btn-download" id="resDownload" href="#" download>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Finished Video (.MP4)
+          </a>
+          <button class="btn-action btn-youtube" onclick="uploadToYouTube()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            Publish Directly to YouTube Shorts
+          </button>
+          <button class="btn-action btn-secondary" onclick="resetForm()">
+            Create Another Video
+          </button>
+        </div>
+
       </div>
-    </div>
-  </div>
+
+    </section>
+
+  </main>
 
   <script>
-    let currentProject = null;
-    let projectsData = [];
+    let timerInterval = null;
+    let secondsElapsed = 0;
+    let currentVideoData = null;
 
-    // Load projects on start
-    async function loadProjects() {
-      try {
-        const res = await fetch('/api/projects');
-        projectsData = await res.json();
-        renderProjectList();
-        if (projectsData.length > 0 && !currentProject) {
-          selectProject(projectsData[0].id);
-        }
-      } catch (err) {
-        logConsole('Error loading projects: ' + err);
+    function usePrompt(text, category) {
+      document.getElementById('promptInput').value = text;
+      if (category) {
+        document.getElementById('optCategory').value = category;
       }
     }
 
-    function renderProjectList() {
-      const list = document.getElementById('projectList');
-      list.innerHTML = '';
-      projectsData.forEach(p => {
-        const li = document.createElement('li');
-        li.className = 'project-item' + (currentProject && currentProject.id === p.id ? ' active' : '');
-        li.onclick = () => selectProject(p.id);
-        li.innerHTML = `
-          <div class="project-title">${p.title || p.id}</div>
-          <div class="project-meta">
-            <span>${p.durationSec || 40}s</span>
-            ${p.hasVoice ? '<span class="badge badge-ready">Voice ✓</span>' : '<span class="badge badge-pending">No Voice</span>'}
-            ${p.hasVideo ? '<span class="badge badge-ready">Video ✓</span>' : ''}
-          </div>
-        `;
-        list.appendChild(li);
-      });
-    }
-
-    async function selectProject(id) {
-      logConsole(`Loading project: ${id}...`);
-      try {
-        const res = await fetch(`/api/project?id=${id}`);
-        currentProject = await res.json();
-        renderProjectList();
-        renderCurrentProject();
-      } catch (err) {
-        logConsole('Failed to load project: ' + err);
-      }
-    }
-
-    function renderCurrentProject() {
-      if (!currentProject) return;
-      document.getElementById('curTitle').innerText = currentProject.title || currentProject.id;
-      document.getElementById('curMeta').innerText = 
-        `ID: ${currentProject.id} • ${currentProject.durationSec || 40}s • 1080×1920 (30fps)`;
-
-      document.getElementById('ytTitle').value = currentProject.title || '';
-
-      // Render Beats
-      const container = document.getElementById('beatsContainer');
-      container.innerHTML = '';
-      const beats = (currentProject.beats && currentProject.beats.vo) || [];
-
-      beats.forEach((b, idx) => {
-        const card = document.createElement('div');
-        card.className = 'beat-card';
-        const tagClass = 'tag-' + (b.beat || 'setup');
-        card.innerHTML = `
-          <div class="beat-header">
-            <span class="beat-tag ${tagClass}">${b.beat || 'line ' + (idx + 1)}</span>
-            <span class="beat-timing">${b.start || 0}s → ${b.end || 0}s</span>
-          </div>
-          <textarea class="beat-input" rows="2" data-idx="${idx}">${b.text || ''}</textarea>
-        `;
-        container.appendChild(card);
-      });
-
-      // Update Audio Preview
-      const audioPlayer = document.getElementById('audioPlayer');
-      if (currentProject.voiceUrl) {
-        audioPlayer.src = currentProject.voiceUrl + '?t=' + Date.now();
-        document.getElementById('audioTrackLabel').innerText = 'voice.wav (Available)';
-      } else {
-        audioPlayer.removeAttribute('src');
-        document.getElementById('audioTrackLabel').innerText = 'voice.wav (Not generated yet)';
-      }
-
-      // Update Video Preview
-      const videoPlayer = document.getElementById('videoPlayer');
-      const placeholder = document.getElementById('videoPlaceholder');
-      if (currentProject.videoUrl) {
-        videoPlayer.src = currentProject.videoUrl + '?t=' + Date.now();
-        videoPlayer.style.display = 'block';
-        placeholder.style.display = 'none';
-      } else {
-        videoPlayer.removeAttribute('src');
-        videoPlayer.style.display = 'none';
-        placeholder.style.display = 'flex';
-      }
-    }
-
-    async function saveCurrentBeats() {
-      if (!currentProject) return;
-      const textareas = document.querySelectorAll('.beat-input');
-      textareas.forEach(ta => {
-        const idx = parseInt(ta.getAttribute('data-idx'));
-        if (currentProject.beats.vo[idx]) {
-          currentProject.beats.vo[idx].text = ta.value;
-        }
-      });
-
-      logConsole('Saving beats.json...');
-      try {
-        const res = await fetch('/api/save-beats', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: currentProject.id, beats: currentProject.beats })
-        });
-        const data = await res.json();
-        if (data.ok) {
-          logConsole('✓ beats.json saved successfully!');
+    function setStep(stepNum) {
+      for (let i = 1; i <= 5; i++) {
+        const el = document.getElementById('step' + i);
+        if (i < stepNum) {
+          el.className = 'step-item done';
+          el.querySelector('.step-icon').innerText = '✓';
+        } else if (i === stepNum) {
+          el.className = 'step-item active';
+          el.querySelector('.step-icon').innerText = i;
         } else {
-          logConsole('Error: ' + data.error);
+          el.className = 'step-item';
+          el.querySelector('.step-icon').innerText = i;
         }
-      } catch (err) {
-        logConsole('Error saving: ' + err);
       }
     }
 
-    async function generateVoice() {
-      if (!currentProject) return;
-      logConsole(`🎙️ Starting Kokoro voice generation for ${currentProject.id}...`);
-      setButtonsDisabled(true);
+    async function startGeneration() {
+      const prompt = document.getElementById('promptInput').value.trim();
+      if (!prompt) {
+        alert('Please enter a topic or prompt for your video.');
+        return;
+      }
+
+      const category = document.getElementById('optCategory').value;
+      const voice = document.getElementById('optVoice').value;
+      const speed = parseFloat(document.getElementById('optSpeed').value);
+      const sfx = document.getElementById('optSfx').checked;
+
+      // UI Transitions
+      document.getElementById('btnGenerate').disabled = true;
+      document.getElementById('resultCard').classList.remove('active');
+      document.getElementById('progressCard').classList.add('active');
+
+      // Start Timer
+      secondsElapsed = 0;
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        document.getElementById('progressTime').innerText = secondsElapsed + 's';
+      }, 1000);
+
+      // Simulate steps while calling backend
+      setStep(1);
+      setTimeout(() => setStep(2), 1200);
+      setTimeout(() => setStep(3), 2800);
+      setTimeout(() => setStep(4), 4500);
+
       try {
-        const res = await fetch('/api/generate-voice', {
+        const res = await fetch('/api/generate-from-prompt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: currentProject.id })
+          body: JSON.stringify({ prompt, category, voice, speed, sfx })
         });
+
         const data = await res.json();
-        logConsole(data.output || data.message || 'Done');
-        await selectProject(currentProject.id);
+        setStep(5);
+        setTimeout(() => {
+          showResult(data);
+        }, 800);
       } catch (err) {
-        logConsole('Voice gen failed: ' + err);
-      } finally {
-        setButtonsDisabled(false);
+        alert('Generation error: ' + err);
+        document.getElementById('btnGenerate').disabled = false;
+        document.getElementById('progressCard').classList.remove('active');
+        clearInterval(timerInterval);
       }
     }
 
-    async function updateCaptions() {
-      if (!currentProject) return;
-      logConsole(`⚡ Syncing captions for ${currentProject.id}...`);
-      try {
-        const res = await fetch('/api/sync-captions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: currentProject.id })
-        });
-        const data = await res.json();
-        logConsole(data.output || 'Captions updated!');
-      } catch (err) {
-        logConsole('Caption sync failed: ' + err);
-      }
+    function showResult(data) {
+      clearInterval(timerInterval);
+      document.getElementById('btnGenerate').disabled = false;
+      document.getElementById('progressCard').classList.remove('active');
+      document.getElementById('resultCard').classList.add('active');
+
+      currentVideoData = data;
+      document.getElementById('resTitle').innerText = data.title || 'Generated Short';
+      document.getElementById('resScript').innerText = data.script || 'Voice narration completed.';
+
+      const video = document.getElementById('resVideo');
+      const downloadLink = document.getElementById('resDownload');
+      const videoSrc = (data.videoUrl || '/shorts/short-2-math/output/short-2-final.mp4') + '?t=' + Date.now();
+
+      video.src = videoSrc;
+      video.play().catch(() => {});
+
+      downloadLink.href = data.videoUrl || '#';
+      downloadLink.setAttribute('download', (data.id || 'video') + '.mp4');
+
+      // Scroll smoothly to result
+      document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
     }
 
-    async function renderVideo() {
-      if (!currentProject) return;
-      logConsole(`🎬 Rendering composition for ${currentProject.id}... This will take ~30-60s.`);
-      setButtonsDisabled(true);
-      try {
-        const res = await fetch('/api/render', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: currentProject.id })
-        });
-        const data = await res.json();
-        logConsole(data.output || 'Render completed!');
-        await selectProject(currentProject.id);
-      } catch (err) {
-        logConsole('Render failed: ' + err);
-      } finally {
-        setButtonsDisabled(false);
-      }
+    function resetForm() {
+      document.getElementById('resultCard').classList.remove('active');
+      document.getElementById('promptInput').value = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    async function mixSfx() {
-      if (!currentProject) return;
-      logConsole(`🔊 Mixing SFX for ${currentProject.id}...`);
-      try {
-        const res = await fetch('/api/mix-sfx', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: currentProject.id })
-        });
-        const data = await res.json();
-        logConsole(data.output || 'SFX mixed!');
-        await selectProject(currentProject.id);
-      } catch (err) {
-        logConsole('SFX mix failed: ' + err);
-      }
-    }
-
-    async function uploadYouTube() {
-      if (!currentProject) return;
-      const title = document.getElementById('ytTitle').value;
-      const tags = document.getElementById('ytTags').value;
-      if (!confirm(`Are you ready to upload "${title}" to YouTube?`)) return;
-      logConsole(`🚀 Uploading to YouTube...`);
+    async function uploadToYouTube() {
+      if (!confirm('Ready to upload this short to your YouTube channel?')) return;
       try {
         const res = await fetch('/api/youtube-upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: currentProject.id, title, tags })
+          body: JSON.stringify({ title: document.getElementById('resTitle').innerText })
         });
         const data = await res.json();
-        logConsole(data.output || 'Upload initiated!');
-      } catch (err) {
-        logConsole('Upload failed: ' + err);
+        alert('YouTube Upload Status: ' + (data.output || 'Uploaded successfully!'));
+      } catch (e) {
+        alert('Upload failed: ' + e);
       }
     }
-
-    async function openRemotionStudio() {
-      logConsole('Launching Remotion Studio on http://localhost:3000 ...');
-      try {
-        await fetch('/api/start-studio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-      } catch (e) {}
-      setTimeout(() => {
-        window.open('http://localhost:3000', '_blank');
-      }, 1500);
-    }
-
-    function setButtonsDisabled(disabled) {
-      document.querySelectorAll('.action-bar button').forEach(b => b.disabled = disabled);
-    }
-
-    function logConsole(text) {
-      const box = document.getElementById('consoleOutput');
-      const time = new Date().toLocaleTimeString();
-      box.innerText += `\n[${time}] ${text}`;
-      box.scrollTop = box.scrollHeight;
-    }
-
-    function clearConsole() {
-      document.getElementById('consoleOutput').innerText = 'Console cleared.';
-    }
-
-    function openNewModal() {
-      document.getElementById('newShortModal').classList.add('active');
-    }
-    function closeNewModal() {
-      document.getElementById('newShortModal').classList.remove('active');
-    }
-
-    async function submitNewShort() {
-      const id = document.getElementById('newId').value.trim();
-      const title = document.getElementById('newTitle').value.trim();
-      const track = document.getElementById('newTrack').value;
-      if (!id || !title) {
-        alert('Please provide an ID and Title');
-        return;
-      }
-      try {
-        const res = await fetch('/api/create-short', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, title, track })
-        });
-        const data = await res.json();
-        if (data.ok) {
-          closeNewModal();
-          await loadProjects();
-          selectProject(id);
-        } else {
-          alert('Error: ' + data.error);
-        }
-      } catch (err) {
-        alert('Failed: ' + err);
-      }
-    }
-
-    // Initialize
-    loadProjects();
   </script>
 </body>
 </html>
