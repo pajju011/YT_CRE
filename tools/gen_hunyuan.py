@@ -59,7 +59,7 @@ def generate_via_colab_tunnel(prompt, out_path, endpoint_url, aspect_ratio="9:16
     )
     
     try:
-        with urllib.request.urlopen(req, timeout=300) as resp:
+        with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode())
             video_url = data.get("video_url") or data.get("url")
             if video_url:

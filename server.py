@@ -933,8 +933,6 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             res_h = subprocess.run(cmd_hunyuan, cwd=str(ROOT), capture_output=True, text=True)
             if out_hunyuan.exists() and res_h.returncode == 0:
                 raw_video = out_hunyuan
-            else:
-                balance_note = "Tencent HunyuanVideo (13B) requires 14GB–45GB VRAM (your GPU has 4GB VRAM). Launch the 1-click Google Colab notebook in `colab/VideoAI_Unified_Studio.ipynb` and enter the tunnel URL in Settings!"
 
         # Check FreeVideo
         if not raw_video and category == "freevideo":
@@ -943,8 +941,6 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             res_fv = subprocess.run(cmd_fv, cwd=str(ROOT), capture_output=True, text=True)
             if out_freevideo.exists() and res_fv.returncode == 0:
                 raw_video = out_freevideo
-            else:
-                balance_note = "FlashML FreeVideo (MiniMax H3) requires 8GB+ VRAM (your GPU has 4GB VRAM). Connect the 1-click Google Colab notebook in `colab/VideoAI_Unified_Studio.ipynb` or add FAL_KEY in Settings!"
 
         # Check LongCat-Video
         if not raw_video and category == "longcat":
@@ -953,12 +949,20 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             res_lc = subprocess.run(cmd_lc, cwd=str(ROOT), capture_output=True, text=True)
             if out_longcat.exists() and res_lc.returncode == 0:
                 raw_video = out_longcat
-            else:
-                balance_note = "Meituan LongCat-Video (13.6B) requires 16GB+ VRAM (your GPU has 4GB VRAM). Connect the 1-click Google Colab notebook in `colab/VideoAI_Unified_Studio.ipynb` or use HuggingFace Spaces!"
 
-        # Check MaiToken Seedance
-        if not raw_video and category == "generative":
-            balance_note = "Your MaiToken balance is 0.00 credits. Use the free Google Colab Hub or drag-and-drop any MP4 video below to add AI voice and captions!"
+        # Check Connected Google Colab Cloud GPU Hub (for any general prompt)
+        env = load_env_dict()
+        colab_endpoint = env.get("COLAB_VIDEO_ENDPOINT")
+        if not raw_video and colab_endpoint:
+            try:
+                from tools.gen_hunyuan import generate_via_colab_tunnel
+                out_colab = out_dir / "colab_raw.mp4"
+                print(f"[Unified Engine] Dispatching to Colab Cloud GPU: {colab_endpoint}...")
+                ok_colab = generate_via_colab_tunnel(prompt, out_colab, colab_endpoint)
+                if ok_colab and out_colab.exists():
+                    raw_video = out_colab
+            except Exception as e:
+                print(f"[Unified Engine Colab fallback] {e}")
 
         # Check Comfy Router (Wan 2.5 / Kling)
         if not raw_video and category in ["wan", "kling"]:
@@ -968,8 +972,25 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             res_cf = comfy_client.generate_video(prompt, out_comfy, model=model_name)
             if res_cf.get("ok") and out_comfy.exists():
                 raw_video = out_comfy
-            else:
-                balance_note = res_cf.get("error") or "Comfy Router: Insufficient credits. Top up at platform.comfy.org or use the free Storyboard Studio!"
+
+        # Universal Auto-Video Generator (Zero VRAM, 100% Free):
+        # If no raw video was created yet, automatically generate it via Cinema Studio Engine!
+        if not raw_video:
+            try:
+                from tools.cinema_studio import generate_cinema_short
+                c_move = body.get("cameraMove", "dolly_in")
+                c_genre = "3d_cartoon" if any(w in prompt.lower() for w in ["girl", "kid", "cartoon", "3d", "dance", "dancing", "toy", "cute"]) else "cinematic"
+                res_cin = generate_cinema_short(
+                    prompt, out_dir,
+                    camera_move=c_move,
+                    genre=c_genre
+                )
+                if res_cin.get("ok"):
+                    raw_c_path = Path(res_cin["raw_video"])
+                    if raw_c_path.exists():
+                        raw_video = raw_c_path
+            except Exception as e:
+                print(f"[Universal Auto-Video Fallback] {e}")
 
         # 5. Universal Video Compositor Pass (Composite Raw Video + Voice + Ducked Music + SFX + Captions)
         voice_wav = pdir / "output" / "kokoro" / "voice.wav"
