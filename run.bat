@@ -3,7 +3,7 @@ setlocal EnableDelayedExpansion
 
 :: Change directory to the repository root
 cd /d "%~dp0"
-title VideoGenerator Launcher
+title VideoGenerator Studio
 
 :: Locate and configure Python Virtual Environment
 if exist "%~dp0.venv-kokoro\Scripts\python.exe" (
@@ -16,12 +16,13 @@ if exist "%~dp0.venv-kokoro\Scripts\python.exe" (
     set "PY_CMD=python"
 )
 
-:: Track if launched interactively or via CLI
-set "INTERACTIVE=1"
+:: Handle command line arguments if provided
 if not "%~1"=="" (
     set "INTERACTIVE=0"
-    if /i "%~1"=="ui" goto opt_web_ui
-    if /i "%~1"=="web" goto opt_web_ui
+    if /i "%~1"=="menu" (
+        set "INTERACTIVE=1"
+        goto menu
+    )
     if /i "%~1"=="studio" goto opt_studio
     if /i "%~1"=="voice" goto opt_voice
     if /i "%~1"=="render" goto opt_render
@@ -31,10 +32,25 @@ if not "%~1"=="" (
     if /i "%~1"=="upload" goto opt_upload
     if /i "%~1"=="schedule" goto opt_schedule
     if /i "%~1"=="gen" goto opt_gen
-    echo Unknown argument: %~1
-    echo Usage: run.bat [ui^|studio^|voice^|render^|sfx^|test^|auth^|upload^|schedule^|gen]
-    exit /b 1
 )
+
+:: DIRECT WEBSITE LAUNCH (Default on double-click or run.bat)
+cls
+echo ================================================================
+echo           STARTING VIDEOGENERATOR WEB STUDIO
+echo ================================================================
+echo.
+echo   Opening: http://localhost:5000 in your browser...
+echo   (Press Ctrl+C in this terminal window to stop the server)
+echo.
+echo ================================================================
+
+:: Open browser after 1 second
+start "" cmd /c "timeout /t 1 /nobreak >nul && start http://localhost:5000"
+
+:: Start the Web Server
+%PY_CMD% server.py
+exit /b 0
 
 :menu
 cls
@@ -42,7 +58,7 @@ echo ================================================================
 echo           VIDEO GENERATOR - CONTROL PANEL
 echo ================================================================
 echo.
-echo   [1] Launch Web Studio (Modern Website UI)  ^<-- PRESS ENTER
+echo   [1] Launch Web Studio (Browser Website)
 echo   [2] Launch Remotion Studio (Visual Canvas Preview)
 echo   [3] Generate Voice ^& Captions (Kokoro AI: Short 2)
 echo   [4] Render Remotion Video (Short2Math / All)
@@ -56,9 +72,13 @@ echo   [0] Exit
 echo.
 echo ================================================================
 set "choice=1"
-set /p "choice=Enter choice [1-10] (Default is 1 - Web Studio): "
+set /p "choice=Enter choice [0-10]: "
 
-if "%choice%"=="1" goto opt_web_ui
+if "%choice%"=="1" (
+    start "" cmd /c "timeout /t 1 /nobreak >nul && start http://localhost:5000"
+    %PY_CMD% server.py
+    goto check_return
+)
 if "%choice%"=="2" goto opt_studio
 if "%choice%"=="3" goto opt_voice
 if "%choice%"=="4" goto opt_render
@@ -68,22 +88,12 @@ if "%choice%"=="7" goto opt_auth
 if "%choice%"=="8" goto opt_upload
 if "%choice%"=="9" goto opt_schedule
 if "%choice%"=="10" goto opt_gen
-if "%choice%"=="0" goto opt_exit
+if "%choice%"=="0" exit /b 0
 
 echo.
 echo Invalid option selected: %choice%
 pause
 goto menu
-
-:opt_web_ui
-echo.
-echo ================================================================
-echo Starting VideoGenerator Web Studio...
-echo URL: http://localhost:5000
-echo ================================================================
-start "" cmd /c "timeout /t 1 /nobreak >nul && start http://localhost:5000"
-%PY_CMD% server.py
-goto check_return
 
 :opt_studio
 echo.
@@ -190,7 +200,3 @@ if "%INTERACTIVE%"=="1" (
 ) else (
     exit /b %errorlevel%
 )
-
-:opt_exit
-echo Exiting...
-exit /b 0
