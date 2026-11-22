@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VideoGenerator AI Studio</title>
+  <title>VideoAI Studio — Viral Shorts Generator</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
@@ -45,7 +45,7 @@
     header {
       width: 100%;
       max-width: 1100px;
-      padding: 20px 24px;
+      padding: 18px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -76,6 +76,11 @@
       color: #fff;
       letter-spacing: -0.3px;
     }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
     .engine-badge {
       display: inline-flex;
       align-items: center;
@@ -95,15 +100,33 @@
       border-radius: 50%;
       box-shadow: 0 0 8px var(--teal);
     }
+    .btn-settings {
+      background: #181d28;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn-settings:hover {
+      border-color: var(--primary);
+      color: #fff;
+    }
 
     /* Main Container */
     main {
       width: 100%;
-      max-width: 820px;
+      max-width: 840px;
       padding: 10px 20px 60px;
       display: flex;
       flex-direction: column;
-      gap: 28px;
+      gap: 24px;
     }
 
     /* Hero Text */
@@ -112,12 +135,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
-      margin-top: 10px;
+      gap: 8px;
+      margin-top: 6px;
     }
     .hero-title {
       font-family: var(--font-display);
-      font-size: 38px;
+      font-size: 36px;
       font-weight: 700;
       color: #fff;
       letter-spacing: -0.8px;
@@ -130,8 +153,8 @@
     }
     .hero-subtitle {
       color: var(--text-muted);
-      font-size: 15px;
-      max-width: 580px;
+      font-size: 14px;
+      max-width: 600px;
       line-height: 1.5;
     }
 
@@ -144,12 +167,39 @@
       box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 18px;
       transition: border-color 0.2s ease;
     }
     .generator-card:focus-within {
       border-color: var(--border-focus);
       box-shadow: 0 0 24px var(--primary-glow);
+    }
+
+    /* Mode Tabs */
+    .mode-tabs {
+      display: flex;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    .mode-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .mode-tab.active {
+      background: #181d28;
+      color: #fff;
+      border: 1px solid var(--border);
     }
 
     /* Prompt Textarea */
@@ -162,6 +212,8 @@
       font-size: 13px;
       font-weight: 600;
       color: var(--text);
+      display: flex;
+      justify-content: space-between;
     }
     .prompt-textarea {
       background: #090c10;
@@ -169,10 +221,10 @@
       border-radius: 10px;
       padding: 14px 16px;
       font-family: var(--font-body);
-      font-size: 15px;
+      font-size: 14px;
       color: #fff;
       resize: none;
-      min-height: 90px;
+      min-height: 85px;
       outline: none;
       transition: all 0.2s ease;
       line-height: 1.5;
@@ -182,6 +234,50 @@
     }
     .prompt-textarea::placeholder {
       color: #4b5563;
+    }
+
+    /* Drag & Drop File Zone */
+    .dropzone {
+      display: none;
+      background: #090c10;
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .dropzone.active {
+      display: flex;
+    }
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.05);
+    }
+    .dropzone-text {
+      font-size: 13px;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .dropzone-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .dropzone-preview {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: #181d28;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--teal);
+      color: var(--teal);
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 6px;
     }
 
     /* Prompt Suggestion Chips */
@@ -216,7 +312,7 @@
     /* Options Grid */
     .options-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 14px;
       padding-top: 14px;
       border-top: 1px solid var(--border);
@@ -510,54 +606,170 @@
       color: #fff;
       border-color: #4b5563;
     }
+
+    /* Settings Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-content {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-width: 540px;
+      width: 100%;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .btn-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+    }
+    .config-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .config-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .config-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .config-input {
+      background: #090c10;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: #fff;
+      font-size: 13px;
+      font-family: var(--font-mono);
+      outline: none;
+    }
+    .config-input:focus {
+      border-color: var(--primary);
+    }
+    .btn-save-cfg {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .btn-save-cfg:hover {
+      background: var(--primary-hover);
+    }
   </style>
 </head>
 <body>
 
-  <!-- Minimalist Navbar -->
+  <!-- Navbar -->
   <header>
     <a href="/" class="logo-container">
       <div class="logo-badge">V</div>
       <div class="logo-name">VideoAI Studio</div>
     </a>
-    <div class="engine-badge">
-      <span class="status-dot"></span>
-      MaiToken & Kokoro AI Active
+    <div class="nav-actions">
+      <div class="engine-badge">
+        <span class="status-dot"></span>
+        Hunyuan • FreeVideo • Kokoro
+      </div>
+      <button class="btn-settings" onclick="openSettings()">
+        ⚙️ AI Cores & Endpoints
+      </button>
     </div>
   </header>
 
-  <!-- Main App Canvas -->
+  <!-- Main App -->
   <main>
 
     <!-- Hero Header -->
     <section class="hero-section">
       <h1 class="hero-title">Create Viral Shorts from a <span>Single Prompt</span></h1>
       <p class="hero-subtitle">
-        Enter your idea. The engine automatically scripts a 6-beat hook grammar, generates AI voice narration, syncs captions, and renders a 1080×1920 video.
+        Powered by Tencent HunyuanVideo, FlashML FreeVideo, Meituan LongCat, and Kokoro Neural TTS.
       </p>
     </section>
 
-    <!-- Minimalist Generator Form -->
+    <!-- Generator Card -->
     <section class="generator-card" id="genCard">
       
+      <!-- Mode Tabs -->
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="tabPrompt" onclick="switchMode('prompt')">
+          ✨ Text-to-Video Prompt
+        </button>
+        <button class="mode-tab" id="tabUpload" onclick="switchMode('upload')">
+          📥 Drag & Drop Existing Video
+        </button>
+      </div>
+
       <!-- Prompt Input -->
-      <div class="prompt-wrapper">
-        <label class="prompt-label">What is your video about?</label>
+      <div class="prompt-wrapper" id="promptSection">
+        <label class="prompt-label">
+          <span>What is your video about?</span>
+        </label>
         <textarea 
           class="prompt-textarea" 
           id="promptInput" 
-          placeholder="e.g. The ×11 mental math trick that lets you multiply any two-digit number in two seconds without a calculator..."
+          placeholder="e.g. A cute little girl happily dancing to cheerful music in colorful 3D cartoon animation..."
         ></textarea>
       </div>
 
+      <!-- Drag & Drop Zone (for uploaded clips) -->
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('fileUpload').click()">
+        <input type="file" id="fileUpload" accept="video/mp4,video/webm,video/quicktime" style="display: none;" onchange="handleFileSelected(this.files)">
+        <div style="font-size: 28px;">🎬</div>
+        <div class="dropzone-text">Click or drag & drop any MP4 video clip here</div>
+        <div class="dropzone-sub">Downloaded from Hailuo, Kling, Luma, or Colab? Drop it here to layer AI voice & animated captions!</div>
+        <div class="dropzone-preview" id="dropPreview">
+          <span>✓ Video selected:</span>
+          <span id="dropFileName">video.mp4</span>
+        </div>
+      </div>
+
       <!-- Quick Prompt Suggestions -->
-      <div class="suggestions">
+      <div class="suggestions" id="suggestionsRow">
         <span class="suggestion-label">Try an idea:</span>
-        <span class="chip" onclick="usePrompt('A cute little girl happily dancing to cheerful music in colorful 3D cartoon animation', 'generative')">Dancing 3D Cartoon</span>
+        <span class="chip" onclick="usePrompt('A cute little girl happily dancing to cheerful music, performing fun dance moves in colorful 3D cartoon animation', 'hunyuan')">Dancing 3D Girl (Hunyuan)</span>
+        <span class="chip" onclick="usePrompt('A futuristic cyberpunk city with flying neon cars and cinematic dynamic camera sweep', 'freevideo')">Cyberpunk City (FreeVideo)</span>
+        <span class="chip" onclick="usePrompt('An animated character speaking expressively with realistic lip synchronization', 'longcat')">Talking Avatar (LongCat)</span>
         <span class="chip" onclick="usePrompt('The ×11 mental math trick that feels like magic in two seconds', 'math')">×11 Math Trick</span>
         <span class="chip" onclick="usePrompt('How git reflog lets you undo any mistake even if you deleted your branch', 'dev')">Git Reflog Lifesaver</span>
-        <span class="chip" onclick="usePrompt('The Monty Hall problem: Why you should always switch doors', 'math')">Monty Hall Paradox</span>
-        <span class="chip" onclick="usePrompt('Bubble sort vs Quick sort: Which sorting algorithm is really faster?', 'dev')">Bubble vs Quick Sort</span>
         <span class="chip" onclick="usePrompt('The 1 percent fee that secretly eats 24 percent of your retirement savings', 'finance')">1% Fee Trap</span>
         <span class="chip" onclick="usePrompt('Why astronauts on the space station aren\'t weightless, they are falling', 'science')">Astronauts Falling</span>
       </div>
@@ -565,24 +777,26 @@
       <!-- Options Row -->
       <div class="options-grid">
         
-        <!-- Category -->
+        <!-- Category / Engine -->
         <div class="option-group">
-          <label class="option-label">Video Engine / Style</label>
+          <label class="option-label">AI Video Generation Core</label>
           <select class="select-input" id="optCategory">
-            <option value="hunyuan">🎬 Tencent HunyuanVideo (Text-to-Video AI)</option>
+            <option value="hunyuan">🎬 Tencent HunyuanVideo (13B T2V)</option>
+            <option value="freevideo">🎬 FlashML FreeVideo (MiniMax H3)</option>
+            <option value="longcat">🎬 Meituan LongCat-Video (Foundation)</option>
             <option value="generative">🎬 Seedance 2.5 / Kling (MaiToken)</option>
-            <option value="kids">🎨 3D Cartoon Storybook (Local Remotion)</option>
-            <option value="math">Mental Math & Equations (Local Remotion)</option>
-            <option value="dev">Dev Console & Code (Local Remotion)</option>
-            <option value="finance">Finance & Growth Charts (Local Remotion)</option>
-            <option value="science">Physics & Space Orbit (Local Remotion)</option>
-            <option value="vox">Vox Paper Documentary (Local Remotion)</option>
+            <option value="kids">🎨 3D Cartoon Storybook (Remotion)</option>
+            <option value="math">Mental Math & Equations (Remotion)</option>
+            <option value="dev">Dev Console & Code (Remotion)</option>
+            <option value="finance">Finance & Growth Charts (Remotion)</option>
+            <option value="science">Physics & Space Orbit (Remotion)</option>
+            <option value="vox">Vox Paper Documentary (Remotion)</option>
           </select>
         </div>
 
         <!-- Voice -->
         <div class="option-group">
-          <label class="option-label">AI Voice (Kokoro)</label>
+          <label class="option-label">AI Voice (Kokoro Local)</label>
           <select class="select-input" id="optVoice">
             <option value="af_heart">Heart (Natural Female)</option>
             <option value="am_adam">Adam (Deep Male)</option>
@@ -615,7 +829,7 @@
       <!-- Generate Button -->
       <button class="btn-generate" id="btnGenerate" onclick="startGeneration()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-        Generate Video
+        Generate Video Short
       </button>
 
     </section>
@@ -625,7 +839,7 @@
       <div class="progress-header">
         <div class="progress-title">
           <div class="spinner"></div>
-          <span id="progressStatusText">Crafting your video...</span>
+          <span id="progressStatusText">Synthesizing and compositing video...</span>
         </div>
         <span style="font-size: 12px; color: var(--text-muted);" id="progressTime">0s</span>
       </div>
@@ -641,15 +855,15 @@
         </div>
         <div class="step-item" id="step3">
           <div class="step-icon">3</div>
-          <span>Generating word-level synced captions</span>
+          <span>Dispatching video generation core or processing clip</span>
         </div>
         <div class="step-item" id="step4">
           <div class="step-icon">4</div>
-          <span>Assembling & rendering 1080×1920 video composition</span>
+          <span>Compositing video, word captions, and 9:16 vertical crop</span>
         </div>
         <div class="step-item" id="step5">
           <div class="step-icon">5</div>
-          <span>Mixing audio bed, sound effects, and volume ducking</span>
+          <span>Mixing audio bed, sound effects, and final MP4 export</span>
         </div>
       </div>
     </section>
@@ -663,7 +877,9 @@
         <div id="resAudioFallback" style="display: none; padding: 24px; text-align: center; flex-direction: column; align-items: center; gap: 14px; color: var(--text-muted);">
           <div style="font-size: 32px;">🎙️</div>
           <div style="font-size: 14px; font-weight: 600; color: #fff;">Voice Narration Generated</div>
-          <div style="font-size: 11px; line-height: 1.5; color: var(--text-muted);">Generating new 3D cartoon video pixels requires Seedance credits on MaiToken.<br>Listen to your generated voice track:</div>
+          <div style="font-size: 11px; line-height: 1.5; color: var(--text-muted);">
+            Running HunyuanVideo or FreeVideo requires 14GB+ VRAM or a cloud endpoint.<br>Listen to your generated voice track below:
+          </div>
           <audio id="resAudioPlayer" controls style="width: 100%; margin-top: 8px;"></audio>
         </div>
       </div>
@@ -672,8 +888,8 @@
       <div class="result-details">
         <div style="display: flex; flex-direction: column; gap: 8px;">
           <div class="result-tag">✓ Video Ready (1080×1920 • 30fps)</div>
-          <h2 class="result-title" id="resTitle">The ×11 Math Trick</h2>
-          <div class="result-meta" id="resMeta">Format: 9:16 Vertical • Seamless Frame 0 Loop • AI Voice</div>
+          <h2 class="result-title" id="resTitle">Generated Short</h2>
+          <div class="result-meta" id="resMeta">Format: 9:16 Vertical • Kinetic Captions • Kokoro AI Voice</div>
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 6px;">
@@ -703,16 +919,120 @@
 
   </main>
 
+  <!-- Settings Modal Dialog -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">⚙️ AI Cores & Cloud Endpoints</h3>
+        <button class="btn-close" onclick="closeSettings()">&times;</button>
+      </div>
+
+      <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">
+        Connect your free Google Colab GPU tunnel or add API keys. Your RTX 2050 has 4GB VRAM; HunyuanVideo and FreeVideo can run for free on Google Colab GPUs!
+      </p>
+
+      <div class="config-field">
+        <label class="config-label">Google Colab Tunnel URL (100% Free):</label>
+        <span class="config-hint">Launch <code>colab/VideoAI_Unified_Studio.ipynb</code> on Google Colab and paste the Cloudflare/Gradio URL below:</span>
+        <input type="text" class="config-input" id="cfgColabUrl" placeholder="https://xxxx.trycloudflare.com">
+      </div>
+
+      <div class="config-field">
+        <label class="config-label">Fal.ai API Key (for serverless Hunyuan / MiniMax):</label>
+        <input type="password" class="config-input" id="cfgFalKey" placeholder="fal_key_...">
+      </div>
+
+      <div class="config-field">
+        <label class="config-label">Replicate API Token (for serverless Hunyuan):</label>
+        <input type="password" class="config-input" id="cfgReplicateToken" placeholder="r8_...">
+      </div>
+
+      <div class="config-field">
+        <label class="config-label">MaiToken API Key:</label>
+        <input type="password" class="config-input" id="cfgMaiToken" placeholder="sk-easy-...">
+      </div>
+
+      <button class="btn-save-cfg" onclick="saveSettings()">Save & Connect</button>
+    </div>
+  </div>
+
   <script>
     let timerInterval = null;
     let secondsElapsed = 0;
-    let currentVideoData = null;
+    let currentUploadedVideoPath = null;
+    let currentMode = 'prompt';
+
+    function switchMode(mode) {
+      currentMode = mode;
+      document.getElementById('tabPrompt').className = mode === 'prompt' ? 'mode-tab active' : 'mode-tab';
+      document.getElementById('tabUpload').className = mode === 'upload' ? 'mode-tab active' : 'mode-tab';
+      
+      const dropzone = document.getElementById('dropzone');
+      const suggestions = document.getElementById('suggestionsRow');
+
+      if (mode === 'upload') {
+        dropzone.classList.add('active');
+        suggestions.style.display = 'none';
+        document.getElementById('optCategory').value = 'kids';
+      } else {
+        dropzone.classList.remove('active');
+        suggestions.style.display = 'flex';
+      }
+    }
 
     function usePrompt(text, category) {
       document.getElementById('promptInput').value = text;
       if (category) {
         document.getElementById('optCategory').value = category;
       }
+    }
+
+    // Drag and drop handler
+    const dropzone = document.getElementById('dropzone');
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      }, false);
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      }, false);
+    });
+    dropzone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      handleFileSelected(files);
+    });
+
+    async function handleFileSelected(files) {
+      if (!files || files.length === 0) return;
+      const file = files[0];
+      document.getElementById('dropFileName').innerText = file.name + ' (Uploading...)';
+      document.getElementById('dropPreview').style.display = 'flex';
+
+      const reader = new FileReader();
+      reader.onload = async function() {
+        try {
+          const res = await fetch('/api/upload-video', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: file.name, data: reader.result })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            currentUploadedVideoPath = data.path;
+            document.getElementById('dropFileName').innerText = file.name + ' ✓ Ready';
+          } else {
+            alert('Upload error: ' + data.error);
+          }
+        } catch (err) {
+          alert('Upload failed: ' + err);
+        }
+      };
+      reader.readAsDataURL(file);
     }
 
     function setStep(stepNum) {
@@ -733,8 +1053,8 @@
 
     async function startGeneration() {
       const prompt = document.getElementById('promptInput').value.trim();
-      if (!prompt) {
-        alert('Please enter a topic or prompt for your video.');
+      if (!prompt && !currentUploadedVideoPath) {
+        alert('Please enter a prompt or drop a video clip.');
         return;
       }
 
@@ -756,17 +1076,23 @@
         document.getElementById('progressTime').innerText = secondsElapsed + 's';
       }, 1000);
 
-      // Simulate steps while calling backend
       setStep(1);
       setTimeout(() => setStep(2), 1200);
       setTimeout(() => setStep(3), 2800);
-      setTimeout(() => setStep(4), 4500);
+      setTimeout(() => setStep(4), 4800);
 
       try {
         const res = await fetch('/api/generate-from-prompt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, category, voice, speed, sfx })
+          body: JSON.stringify({
+            prompt: prompt || 'Video Narration',
+            category,
+            voice,
+            speed,
+            sfx,
+            videoPath: currentUploadedVideoPath
+          })
         });
 
         const data = await res.json();
@@ -788,7 +1114,6 @@
       document.getElementById('progressCard').classList.remove('active');
       document.getElementById('resultCard').classList.add('active');
 
-      currentVideoData = data;
       document.getElementById('resTitle').innerText = data.title || 'Generated Short';
       document.getElementById('resScript').innerText = data.script || 'Voice narration completed.';
 
@@ -823,13 +1148,14 @@
         }
       }
 
-      // Scroll smoothly to result
       document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
     }
 
     function resetForm() {
       document.getElementById('resultCard').classList.remove('active');
       document.getElementById('promptInput').value = '';
+      currentUploadedVideoPath = null;
+      document.getElementById('dropPreview').style.display = 'none';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -845,6 +1171,49 @@
         alert('YouTube Upload Status: ' + (data.output || 'Uploaded successfully!'));
       } catch (e) {
         alert('Upload failed: ' + e);
+      }
+    }
+
+    // Settings Modal
+    async function openSettings() {
+      document.getElementById('settingsModal').classList.add('active');
+      try {
+        const res = await fetch('/api/config');
+        const cfg = await res.json();
+        if (cfg.colabEndpoint) document.getElementById('cfgColabUrl').value = cfg.colabEndpoint;
+        if (cfg.falKeyMasked) document.getElementById('cfgFalKey').placeholder = cfg.falKeyMasked;
+        if (cfg.replicateTokenMasked) document.getElementById('cfgReplicateToken').placeholder = cfg.replicateTokenMasked;
+        if (cfg.maiTokenKeyMasked) document.getElementById('cfgMaiToken').placeholder = cfg.maiTokenKeyMasked;
+      } catch (e) {}
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsModal').classList.remove('active');
+    }
+
+    async function saveSettings() {
+      const updates = {};
+      const colab = document.getElementById('cfgColabUrl').value.trim();
+      const fal = document.getElementById('cfgFalKey').value.trim();
+      const rep = document.getElementById('cfgReplicateToken').value.trim();
+      const mai = document.getElementById('cfgMaiToken').value.trim();
+
+      if (colab) updates.COLAB_VIDEO_ENDPOINT = colab;
+      if (fal) updates.FAL_KEY = fal;
+      if (rep) updates.REPLICATE_API_TOKEN = rep;
+      if (mai) updates.MAITOKEN_API_KEY = mai;
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+        const d = await res.json();
+        alert(d.message || 'Saved successfully!');
+        closeSettings();
+      } catch (err) {
+        alert('Failed to save settings: ' + err);
       }
     }
   </script>

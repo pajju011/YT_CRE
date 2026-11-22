@@ -1,3 +1,4 @@
+import base64
 import http.server
 import json
 import mimetypes
@@ -6,15 +7,57 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 import urllib.parse
 
 ROOT = Path(__file__).resolve().parent
 PORT = 5000
+STUDIO_PROCESS = None
+
+def load_env_dict():
+    env = {}
+    p = ROOT / ".env"
+    if p.exists():
+        with open(p, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    env[k.strip()] = v.strip().strip('"').strip("'")
+    return {**env, **os.environ}
+
+def save_env_dict(updates):
+    p = ROOT / ".env"
+    lines = []
+    existing_keys = set()
+    if p.exists():
+        with open(p, encoding="utf-8") as f:
+            lines = f.readlines()
+    
+    new_lines = []
+    for line in lines:
+        sline = line.strip()
+        if sline and not sline.startswith("#") and "=" in sline:
+            k, _ = sline.split("=", 1)
+            k = k.strip()
+            existing_keys.add(k)
+            if k in updates and updates[k] is not None:
+                new_lines.append(f"{k}={updates[k]}\n")
+            else:
+                new_lines.append(line)
+        else:
+            new_lines.append(line)
+            
+    for k, v in updates.items():
+        if k not in existing_keys and v is not None:
+            new_lines.append(f"{k}={v}\n")
+            
+    with open(p, "w", encoding="utf-8") as f:
+        f.writelines(new_lines)
 
 class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
-        # Clean logging
         sys.stderr.write(f"[{self.log_date_time_string()}] {format % args}\n")
 
     def send_json(self, data, status=200):
@@ -45,16 +88,16 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         path = parsed.path
         query = urllib.parse.parse_qs(parsed.query)
 
-        # Route API endpoints
         if path == "/api/projects":
             self.handle_get_projects()
         elif path == "/api/project":
             proj_id = query.get("id", [""])[0]
             self.handle_get_project(proj_id)
+        elif path == "/api/config":
+            self.handle_get_config()
         elif path == "/" or path == "/index.html":
             self.serve_file(ROOT / "web/index.html")
         else:
-            # Static file serving
             local_path = (ROOT / path.lstrip("/")).resolve()
             if local_path.is_file() and str(local_path).startswith(str(ROOT)):
                 self.serve_file(local_path)
@@ -83,12 +126,76 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.handle_create_short(body)
             elif path == "/api/start-studio":
                 self.handle_start_studio(body)
+            elif path == "/api/config":
+                self.handle_save_config(body)
+            elif path == "/api/upload-video":
+                self.handle_upload_video(body)
             elif path == "/api/generate-from-prompt":
                 self.handle_generate_from_prompt(body)
             else:
                 self.send_error(404, "Unknown API endpoint")
         except Exception as e:
             self.send_json({"ok": False, "error": str(e)}, status=500)
+
+    # -------------------------------------------------------------------------
+    # CONFIG & UPLOAD HANDLERS
+    # -------------------------------------------------------------------------
+
+    def handle_get_config(self):
+        env = load_env_dict()
+        def mask(val):
+            if not val:
+                return ""
+            if len(val) <= 8:
+                return val[:2] + "****"
+            return val[:4] + "****" + val[-4:]
+
+        self.send_json({
+            "ok": True,
+            "colabEndpoint": env.get("COLAB_VIDEO_ENDPOINT", ""),
+            "hunyuanEndpoint": env.get("HUNYUAN_ENDPOINT", ""),
+            "freevideoEndpoint": env.get("FREEVIDEO_ENDPOINT", ""),
+            "longcatEndpoint": env.get("LONGCAT_ENDPOINT", ""),
+            "hasFalKey": bool(env.get("FAL_KEY")),
+            "falKeyMasked": mask(env.get("FAL_KEY")),
+            "hasReplicateToken": bool(env.get("REPLICATE_API_TOKEN")),
+            "replicateTokenMasked": mask(env.get("REPLICATE_API_TOKEN")),
+            "hasMaiTokenKey": bool(env.get("MAITOKEN_API_KEY")),
+            "maiTokenKeyMasked": mask(env.get("MAITOKEN_API_KEY"))
+        })
+
+    def handle_save_config(self, body):
+        updates = {}
+        for key in ["COLAB_VIDEO_ENDPOINT", "HUNYUAN_ENDPOINT", "FREEVIDEO_ENDPOINT", "LONGCAT_ENDPOINT", "FAL_KEY", "REPLICATE_API_TOKEN", "MAITOKEN_API_KEY"]:
+            if key in body and body[key] != "":
+                updates[key] = body[key]
+        if updates:
+            save_env_dict(updates)
+        self.send_json({"ok": True, "message": "Settings updated successfully."})
+
+    def handle_upload_video(self, body):
+        filename = body.get("filename", "uploaded_clip.mp4")
+        base64_data = body.get("data", "")
+        if "," in base64_data:
+            base64_data = base64_data.split(",", 1)[1]
+
+        safe_name = re.sub(r'[^a-zA-Z0-9_\-\.]', '_', filename)
+        ts = int(time.time())
+        dest_name = f"{ts}_{safe_name}"
+        dest_path = ROOT / "media" / "uploads" / dest_name
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+
+        raw_bytes = base64.b64decode(base64_data)
+        with open(dest_path, "wb") as f:
+            f.write(raw_bytes)
+
+        rel_url = f"/media/uploads/{dest_name}"
+        self.send_json({
+            "ok": True,
+            "filename": dest_name,
+            "videoUrl": rel_url,
+            "path": str(dest_path.relative_to(ROOT)).replace("\\", "/")
+        })
 
     # -------------------------------------------------------------------------
     # API HANDLERS
@@ -136,7 +243,6 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                         except Exception:
                             pass
 
-                    # Detect existing voice & video
                     voice_file = item / "output" / "kokoro" / "voice.wav"
                     has_voice = voice_file.exists()
 
@@ -153,56 +259,34 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                         "composition": comp_id,
                         "hasVoice": has_voice,
                         "hasVideo": has_video,
-                        "relPath": str(item.relative_to(ROOT)).replace("\\", "/")
+                        "path": str(item.relative_to(ROOT)).replace("\\", "/")
                     })
 
-        self.send_json(projects)
+        self.send_json({"ok": True, "projects": projects})
 
     def handle_get_project(self, proj_id):
         pdir = self.get_project_dir(proj_id)
         if not pdir:
-            self.send_json({"error": "Project not found"}, status=404)
+            self.send_json({"ok": False, "error": f"Project {proj_id} not found"}, status=404)
             return
 
         beats_file = pdir / "beats.json"
-        beats_data = {}
-        if beats_file.exists():
-            with open(beats_file, encoding="utf-8") as f:
-                beats_data = json.load(f)
+        scenes_file = pdir / "scenes.json"
+        manifest_file = beats_file if beats_file.exists() else scenes_file
 
-        # Find voice file
-        voice_url = None
-        voice_file = pdir / "output" / "kokoro" / "voice.wav"
-        if voice_file.exists():
-            voice_url = "/" + str(voice_file.relative_to(ROOT)).replace("\\", "/")
+        data = {}
+        if manifest_file and manifest_file.exists():
+            with open(manifest_file, encoding="utf-8") as f:
+                data = json.load(f)
 
-        # Find video file
-        video_url = None
-        output_dir = pdir / "output"
-        if output_dir.exists():
-            mp4s = list(output_dir.glob("*-final.mp4")) or list(output_dir.glob("*-sfx.mp4")) or list(output_dir.glob("*.mp4"))
-            if mp4s:
-                video_url = "/" + str(mp4s[0].relative_to(ROOT)).replace("\\", "/")
-
-        # Fallback to remotion/out
-        if not video_url and beats_data.get("composition"):
-            comp = beats_data["composition"]
-            remotion_mp4 = ROOT / "remotion" / "out" / f"{comp}.mp4"
-            remotion_voiced = ROOT / "remotion" / "out" / f"{comp}-voiced.mp4"
-            if remotion_voiced.exists():
-                video_url = "/" + str(remotion_voiced.relative_to(ROOT)).replace("\\", "/")
-            elif remotion_mp4.exists():
-                video_url = "/" + str(remotion_mp4.relative_to(ROOT)).replace("\\", "/")
+        script_file = pdir / "script.md"
+        script_text = script_file.read_text(encoding="utf-8") if script_file.exists() else ""
 
         self.send_json({
+            "ok": True,
             "id": proj_id,
-            "title": beats_data.get("title", proj_id),
-            "durationSec": beats_data.get("format", {}).get("durationSec", 42),
-            "composition": beats_data.get("composition", ""),
-            "beats": beats_data,
-            "voiceUrl": voice_url,
-            "videoUrl": video_url,
-            "path": str(pdir.relative_to(ROOT)).replace("\\", "/")
+            "manifest": data,
+            "script": script_text
         })
 
     def handle_save_beats(self, body):
@@ -210,133 +294,99 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         beats = body.get("beats")
         pdir = self.get_project_dir(proj_id)
         if not pdir or not beats:
-            self.send_json({"ok": False, "error": "Invalid request"}, status=400)
+            self.send_json({"ok": False, "error": "Invalid project or payload"}, status=400)
             return
 
         beats_file = pdir / "beats.json"
         with open(beats_file, "w", encoding="utf-8") as f:
             json.dump(beats, f, indent=2, ensure_ascii=False)
 
-        self.send_json({"ok": True, "message": "beats.json saved"})
+        self.send_json({"ok": True, "message": "beats.json updated"})
 
     def handle_generate_voice(self, body):
         proj_id = body.get("id")
+        voice = body.get("voice", "af_heart")
+        speed = float(body.get("speed", 1.0))
         pdir = self.get_project_dir(proj_id)
         if not pdir:
-            self.send_json({"ok": False, "error": "Project not found"}, status=404)
+            self.send_json({"ok": False, "error": f"Project {proj_id} not found"}, status=404)
             return
 
         rel_proj = str(pdir.relative_to(ROOT)).replace("\\", "/")
-        py_exe = sys.executable
-
-        # 1. Run Kokoro voice generator
-        cmd1 = [py_exe, str(ROOT / "tools" / "gen_voice_kokoro.py"), "--project", rel_proj]
-        res1 = subprocess.run(cmd1, capture_output=True, text=True, cwd=str(ROOT))
-        
-        # 2. Run Caption timing generator
-        cmd2 = [py_exe, str(ROOT / "tools" / "update_kokoro_captions.py"), "--project", rel_proj]
-        res2 = subprocess.run(cmd2, capture_output=True, text=True, cwd=str(ROOT))
-
-        output = f"{res1.stdout}\n{res2.stdout}"
-        if res1.returncode != 0:
-            output += f"\nError in gen_voice: {res1.stderr}"
-        if res2.returncode != 0:
-            output += f"\nError in captions: {res2.stderr}"
-
-        self.send_json({
-            "ok": res1.returncode == 0 and res2.returncode == 0,
-            "output": output
-        })
+        cmd = [sys.executable, str(ROOT / "tools" / "gen_voice_kokoro.py"), "--project", rel_proj, "--voice", voice, "--speed", str(speed)]
+        res = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
+        if res.returncode == 0:
+            self.send_json({"ok": True, "message": "Voice generated successfully"})
+        else:
+            self.send_json({"ok": False, "error": res.stderr or res.stdout}, status=500)
 
     def handle_sync_captions(self, body):
         proj_id = body.get("id")
         pdir = self.get_project_dir(proj_id)
-        rel_proj = str(pdir.relative_to(ROOT)).replace("\\", "/")
-        py_exe = sys.executable
+        if not pdir:
+            self.send_json({"ok": False, "error": f"Project {proj_id} not found"}, status=404)
+            return
 
-        cmd = [py_exe, str(ROOT / "tools" / "update_kokoro_captions.py"), "--project", rel_proj]
-        res = subprocess.run(cmd, capture_output=True, text=True, cwd=str(ROOT))
-        self.send_json({
-            "ok": res.returncode == 0,
-            "output": res.stdout + ("\n" + res.stderr if res.stderr else "")
-        })
+        rel_proj = str(pdir.relative_to(ROOT)).replace("\\", "/")
+        cmd = [sys.executable, str(ROOT / "tools" / "update_kokoro_captions.py"), "--project", rel_proj]
+        res = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
+        if res.returncode == 0:
+            self.send_json({"ok": True, "message": "Captions synced into vo.gen.ts"})
+        else:
+            self.send_json({"ok": False, "error": res.stderr or res.stdout}, status=500)
 
     def handle_render(self, body):
         proj_id = body.get("id")
+        comp_id = body.get("composition")
         pdir = self.get_project_dir(proj_id)
-        beats_file = pdir / "beats.json" if pdir else None
-
-        comp_id = ""
-        if beats_file and beats_file.exists():
-            with open(beats_file, encoding="utf-8") as f:
-                data = json.load(f)
-                comp_id = data.get("composition", "")
-
-        # Fallback to match
-        if not comp_id:
-            m = re.search(r"short-(\d+)", proj_id)
-            if m:
-                # e.g. Short2Math
-                comp_id = f"Short{m.group(1)}"
 
         remotion_dir = ROOT / "remotion"
         npm_cmd = "npm.cmd" if sys.platform == "win32" else "npm"
 
-        # Step 1: gen registry
-        subprocess.run([npm_cmd, "run", "gen"], cwd=str(remotion_dir), capture_output=True)
-
-        # Step 2: render-all
-        node_cmd = "node"
-        render_args = [node_cmd, "scripts/render-all.mjs"]
+        render_args = [npm_cmd, "run", "render"]
         if comp_id:
-            render_args.append(comp_id)
+            render_args.extend(["--", comp_id])
 
         res = subprocess.run(render_args, cwd=str(remotion_dir), capture_output=True, text=True)
-        self.send_json({
-            "ok": res.returncode == 0,
-            "output": res.stdout + ("\n" + res.stderr if res.stderr else "")
-        })
+        if res.returncode == 0:
+            self.send_json({"ok": True, "message": "Render completed", "output": res.stdout})
+        else:
+            self.send_json({"ok": False, "error": res.stderr or res.stdout}, status=500)
 
     def handle_mix_sfx(self, body):
         proj_id = body.get("id")
         pdir = self.get_project_dir(proj_id)
-        sfx_plan = pdir / "sfx-plan.json"
-        if not sfx_plan.exists():
-            self.send_json({"ok": False, "output": f"sfx-plan.json not found in {proj_id}"})
+        if not pdir:
+            self.send_json({"ok": False, "error": f"Project {proj_id} not found"}, status=404)
             return
 
-        py_exe = sys.executable
-        rel_plan = str(sfx_plan.relative_to(ROOT)).replace("\\", "/")
-        cmd = [py_exe, str(ROOT / "tools" / "mix_sfx.py"), rel_plan]
-        res = subprocess.run(cmd, capture_output=True, text=True, cwd=str(ROOT))
-        self.send_json({
-            "ok": res.returncode == 0,
-            "output": res.stdout + ("\n" + res.stderr if res.stderr else "")
-        })
+        rel_proj = str(pdir.relative_to(ROOT)).replace("\\", "/")
+        cmd = [sys.executable, str(ROOT / "tools" / "mix_sfx.py"), rel_proj]
+        res = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
+        if res.returncode == 0:
+            self.send_json({"ok": True, "message": "SFX mixed successfully", "output": res.stdout})
+        else:
+            self.send_json({"ok": False, "error": res.stderr or res.stdout}, status=500)
 
     def handle_youtube_upload(self, body):
-        py_exe = sys.executable
-        cmd = [py_exe, str(ROOT / "upload_youtube.py")]
-        res = subprocess.run(cmd, capture_output=True, text=True, cwd=str(ROOT))
-        self.send_json({
-            "ok": res.returncode == 0,
-            "output": res.stdout + ("\n" + res.stderr if res.stderr else "")
-        })
+        title = body.get("title", "AI Generated Short")
+        cmd = [sys.executable, str(ROOT / "upload_youtube.py"), "--title", title]
+        res = subprocess.run(cmd, cwd=str(ROOT), capture_output=True, text=True)
+        if res.returncode == 0:
+            self.send_json({"ok": True, "message": "Uploaded to YouTube!", "output": res.stdout})
+        else:
+            self.send_json({"ok": False, "error": res.stderr or res.stdout}, status=500)
 
     def handle_create_short(self, body):
-        new_id = body.get("id", "").strip()
-        title = body.get("title", "").strip()
-        track = body.get("track", "math")
+        title = body.get("title", "New AI Short")
+        track = body.get("track", "shorts")
+        safe_name = re.sub(r'[^a-zA-Z0-9_\-]', '', title.lower().replace(" ", "-"))
+        new_id = f"short-{int(time.time() % 10000)}-{safe_name}"
 
-        if not new_id or not title:
-            self.send_json({"ok": False, "error": "Missing ID or Title"}, status=400)
-            return
-
-        target_dir = ROOT / "shorts" / new_id
+        target_dir = ROOT / track / new_id
         target_dir.mkdir(parents=True, exist_ok=True)
-        (target_dir / "output").mkdir(exist_ok=True)
+        (target_dir / "output" / "kokoro").mkdir(parents=True, exist_ok=True)
 
-        # Scaffolding template beats.json
         template_beats = {
             "id": new_id,
             "title": title,
@@ -379,8 +429,8 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         voice = body.get("voice", "af_heart")
         speed = float(body.get("speed", 1.0))
         sfx = body.get("sfx", True)
+        imported_video_path = body.get("videoPath")
 
-        # Strict word-boundary matching helper to prevent substring collisions (e.g. "feet" matching "fee")
         def matches_any_word(words, text):
             pattern = r'\b(' + '|'.join(re.escape(w) for w in words) + r')\b'
             return bool(re.search(pattern, text, re.IGNORECASE))
@@ -388,21 +438,39 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         is_generative_prompt = matches_any_word([
             "dance", "dancing", "girl", "cartoon", "3d", "character", "cute", 
             "kid", "kids", "story", "animation", "pip", "fox", "magic", "monster"
-        ], prompt) or category in ["generative", "story", "kids"]
+        ], prompt) or category in ["generative", "story", "kids", "hunyuan", "freevideo", "longcat"]
 
         custom_title = None
         custom_vo = None
 
         if category == "hunyuan":
             proj_id = "short-7-kids"
-            custom_title = "HunyuanVideo Generation"
+            custom_title = "Tencent HunyuanVideo Generation"
             custom_vo = [
                 {"beat": "hook", "text": "Generated with Tencent HunyuanVideo. Watch the full animation.", "start": 0.4, "end": 4.5},
-                {"beat": "setup", "text": "Rendering motion dynamics using Tencent's 13B foundation model.", "start": 4.8, "end": 9.0},
-                {"beat": "reveal", "text": "Smooth frame-by-frame 3D character animation.", "start": 9.2, "end": 14.5},
-                {"beat": "loop", "text": "Experience the future of open-source video generation.", "start": 14.8, "end": 19.0}
+                {"beat": "setup", "text": "Rendering 3D motion dynamics using Tencent's 13B foundation model.", "start": 4.8, "end": 9.0},
+                {"beat": "reveal", "text": "Smooth frame-by-frame character animation with rich details.", "start": 9.2, "end": 14.5},
+                {"beat": "loop", "text": "Experience open-source generative video created right on your PC.", "start": 14.8, "end": 19.0}
             ]
-        elif is_generative_prompt:
+        elif category == "freevideo":
+            proj_id = "short-7-kids"
+            custom_title = "FlashML FreeVideo (MiniMax H3)"
+            custom_vo = [
+                {"beat": "hook", "text": "Rendered with FlashML FreeVideo and the MiniMax H3 engine.", "start": 0.4, "end": 4.5},
+                {"beat": "setup", "text": "High-efficiency local video generation built for consumer hardware.", "start": 4.8, "end": 9.0},
+                {"beat": "reveal", "text": "Notice the smooth character movement and dynamic camera flow.", "start": 9.2, "end": 14.5},
+                {"beat": "loop", "text": "Create your next viral short with open source AI video.", "start": 14.8, "end": 19.0}
+            ]
+        elif category == "longcat":
+            proj_id = "short-7-kids"
+            custom_title = "Meituan LongCat-Video"
+            custom_vo = [
+                {"beat": "hook", "text": "Powered by Meituan LongCat-Video foundation model.", "start": 0.4, "end": 4.5},
+                {"beat": "setup", "text": "Unifying text-to-video and audio-driven avatar synchronization.", "start": 4.8, "end": 9.0},
+                {"beat": "reveal", "text": "Long-form temporal consistency with zero color drift.", "start": 9.2, "end": 14.5},
+                {"beat": "loop", "text": "Watch this adorable character animation loop again from the start.", "start": 14.8, "end": 19.0}
+            ]
+        elif is_generative_prompt or imported_video_path:
             proj_id = "short-7-kids"
             custom_title = "Cute 3D Dancing Animation"
             custom_vo = [
@@ -495,39 +563,80 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 script_lines = [item.get("text", "") for item in bdata.get("vo", [])]
                 script_text = " ".join(script_lines)
 
-        # 4. Find video URL
+        # 4. Generate or Resolve Video File
         video_url = None
-        if category == "hunyuan":
-            out_hunyuan = ROOT / "shorts" / "short-7-kids" / "output" / "hunyuan_video.mp4"
+        raw_video = None
+        balance_note = ""
+
+        out_dir = pdir / "output"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        final_short_path = out_dir / "final_short.mp4"
+
+        # Check imported video
+        if imported_video_path:
+            p_imp = (ROOT / imported_video_path.lstrip("/")).resolve()
+            if p_imp.exists():
+                raw_video = p_imp
+
+        # Check HunyuanVideo
+        if not raw_video and category == "hunyuan":
+            out_hunyuan = out_dir / "hunyuan_raw.mp4"
             cmd_hunyuan = [py_exe, str(ROOT / "tools" / "gen_hunyuan.py"), "--prompt", prompt, "--out", str(out_hunyuan)]
             res_h = subprocess.run(cmd_hunyuan, cwd=str(ROOT), capture_output=True, text=True)
             if out_hunyuan.exists() and res_h.returncode == 0:
-                video_url = "/" + str(out_hunyuan.relative_to(ROOT)).replace("\\", "/")
+                raw_video = out_hunyuan
+            else:
+                balance_note = "Tencent HunyuanVideo (13B) requires 14GB–45GB VRAM (your GPU has 4GB VRAM). Launch the 1-click Google Colab notebook in `colab/VideoAI_Unified_Studio.ipynb` and enter the tunnel URL in Settings!"
 
-        if "blue" in prompt or "desert" in prompt:
-            gen_clip = ROOT / "media" / "projects" / "blue-man" / "01-desert-door.mp4"
-            if gen_clip.exists():
-                video_url = "/" + str(gen_clip.relative_to(ROOT)).replace("\\", "/")
+        # Check FreeVideo
+        if not raw_video and category == "freevideo":
+            out_freevideo = out_dir / "freevideo_raw.mp4"
+            cmd_fv = [py_exe, str(ROOT / "tools" / "gen_freevideo.py"), "--prompt", prompt, "--out", str(out_freevideo)]
+            res_fv = subprocess.run(cmd_fv, cwd=str(ROOT), capture_output=True, text=True)
+            if out_freevideo.exists() and res_fv.returncode == 0:
+                raw_video = out_freevideo
+            else:
+                balance_note = "FlashML FreeVideo (MiniMax H3) requires 8GB+ VRAM (your GPU has 4GB VRAM). Connect the 1-click Google Colab notebook in `colab/VideoAI_Unified_Studio.ipynb` or add FAL_KEY in Settings!"
 
-        if not video_url:
-            output_dir = pdir / "output"
-            if output_dir.exists():
-                mp4s = list(output_dir.glob("*-final.mp4")) or list(output_dir.glob("*-sfx.mp4")) or list(output_dir.glob("*.mp4"))
-                if mp4s:
-                    video_url = "/" + str(mp4s[0].relative_to(ROOT)).replace("\\", "/")
+        # Check LongCat-Video
+        if not raw_video and category == "longcat":
+            out_longcat = out_dir / "longcat_raw.mp4"
+            cmd_lc = [py_exe, str(ROOT / "tools" / "gen_longcat.py"), "--prompt", prompt, "--out", str(out_longcat)]
+            res_lc = subprocess.run(cmd_lc, cwd=str(ROOT), capture_output=True, text=True)
+            if out_longcat.exists() and res_lc.returncode == 0:
+                raw_video = out_longcat
+            else:
+                balance_note = "Meituan LongCat-Video (13.6B) requires 16GB+ VRAM (your GPU has 4GB VRAM). Connect the 1-click Google Colab notebook in `colab/VideoAI_Unified_Studio.ipynb` or use HuggingFace Spaces!"
 
-        if not video_url and not is_generative_prompt and category != "hunyuan":
-            remotion_final = ROOT / "shorts" / "short-2-math" / "output" / "short-2-final.mp4"
-            if remotion_final.exists():
-                video_url = "/" + str(remotion_final.relative_to(ROOT)).replace("\\", "/")
+        # Check MaiToken Seedance
+        if not raw_video and category == "generative":
+            balance_note = "Your MaiToken balance is 0.00 credits. Use the free Google Colab Hub or drag-and-drop any MP4 video below to add AI voice and captions!"
+
+        # 5. Universal Video Compositor Pass (Composite Raw Video + Kokoro Voice + Dynamic Captions)
+        voice_wav = pdir / "output" / "kokoro" / "voice.wav"
+        if raw_video and raw_video.exists() and voice_wav.exists():
+            cmd_comp = [
+                py_exe, str(ROOT / "tools" / "video_compositor.py"),
+                "--video", str(raw_video),
+                "--audio", str(voice_wav),
+                "--beats", str(beats_file),
+                "--out", str(final_short_path)
+            ]
+            res_c = subprocess.run(cmd_comp, cwd=str(ROOT), capture_output=True, text=True)
+            if res_c.returncode == 0 and final_short_path.exists():
+                video_url = "/" + str(final_short_path.relative_to(ROOT)).replace("\\", "/")
+
+        # 6. Fallback to existing Remotion renders if no raw video and non-generative
+        if not video_url and not is_generative_prompt and category not in ["hunyuan", "freevideo", "longcat"]:
+            mp4s = list(out_dir.glob("*-final.mp4")) or list(out_dir.glob("*-sfx.mp4")) or list(out_dir.glob("*.mp4"))
+            if mp4s:
+                video_url = "/" + str(mp4s[0].relative_to(ROOT)).replace("\\", "/")
+            else:
+                remotion_math = ROOT / "shorts" / "short-2-math" / "output" / "short-2-final.mp4"
+                if remotion_math.exists():
+                    video_url = "/" + str(remotion_math.relative_to(ROOT)).replace("\\", "/")
 
         voice_url = "/" + rel_proj + "/output/kokoro/voice.wav"
-
-        balance_note = ""
-        if category == "hunyuan" and not video_url:
-            balance_note = "Tencent HunyuanVideo is a 13B model requiring 45GB-60GB VRAM to run locally (your GPU has 4GB VRAM). To run it via cloud A100 GPUs, add REPLICATE_API_TOKEN or FAL_KEY to .env."
-        elif is_generative_prompt and not video_url:
-            balance_note = "Your MaiToken balance is 0.00 credits. Seedance 2.5 / Kling text-to-video requires credits to render new animated 3D video pixels. The AI voice narration was generated locally."
 
         self.send_json({
             "ok": True,
@@ -552,7 +661,6 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
 
             range_header = self.headers.get("Range")
             if range_header and range_header.startswith("bytes="):
-                # Partial Content (HTTP 206)
                 byte_range = range_header.replace("bytes=", "").split("-")
                 start = int(byte_range[0]) if byte_range[0] else 0
                 end = int(byte_range[1]) if len(byte_range) > 1 and byte_range[1] else file_size - 1
@@ -570,7 +678,6 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                     f.seek(start)
                     self.wfile.write(f.read(length))
             else:
-                # Full Content (HTTP 200)
                 self.send_response(200)
                 self.send_header("Content-Type", content_type)
                 self.send_header("Content-Length", str(file_size))
@@ -589,8 +696,14 @@ def run_server():
     print("=" * 60)
     print(f"🎬 VideoGenerator Web Studio running at: http://localhost:{PORT}")
     print("=" * 60)
-    print("Open your browser and navigate to the link above.")
-    print("Press Ctrl+C to stop the server.\n")
+    print("Supported AI Video Cores:")
+    print("  • Tencent HunyuanVideo (13B)")
+    print("  • FlashML FreeVideo (MiniMax H3)")
+    print("  • Meituan LongCat-Video (13.6B)")
+    print("  • Kokoro Local Neural TTS")
+    print("  • Remotion Kinetic Programmatic Shorts")
+    print("=" * 60)
+    print("Open your browser and navigate to http://localhost:5000\n")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

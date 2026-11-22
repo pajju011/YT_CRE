@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 """
-gen_hunyuan.py — Tencent HunyuanVideo generation client.
+gen_hunyuan.py — Tencent HunyuanVideo Generation Client.
 
-HunyuanVideo is a 13B-parameter open-source text-to-video foundation model.
-Because running it locally requires 45GB-60GB VRAM (or 16GB+ VRAM with heavy quantization),
-this tool runs HunyuanVideo via serverless cloud endpoints (Replicate or Fal.ai)
-using pure Python standard library (no extra pip installs needed).
+HunyuanVideo is a 13B-parameter open-source text-to-video foundation model
+by Tencent (https://github.com/Tencent-Hunyuan/HunyuanVideo).
+
+Because running HunyuanVideo locally requires 14GB–60GB VRAM (user GPU: 4GB VRAM),
+this client supports:
+  1. Google Colab Tunnel Endpoint (HUNYUAN_ENDPOINT or COLAB_VIDEO_ENDPOINT) — 100% Free on Colab T4/A100!
+  2. Serverless Cloud via Replicate (REPLICATE_API_TOKEN)
+  3. Serverless Cloud via Fal.ai (FAL_KEY)
+  4. Local ComfyUI / Gradio instance (if running on a remote rig)
 
 Usage:
-  python tools/gen_hunyuan.py --prompt "A cute little girl dancing happily, cartoon 3D" --out output/dance.mp4
-  python tools/gen_hunyuan.py --provider replicate --prompt "..." --out clip.mp4
-  python tools/gen_hunyuan.py --provider fal --prompt "..." --out clip.mp4
-
-Requirements:
-  - For Replicate: REPLICATE_API_TOKEN in .env (get one at replicate.com/account/api-tokens)
-  - For Fal.ai:    FAL_KEY in .env (get one at fal.ai/dashboard/keys)
+  python tools/gen_hunyuan.py --prompt "A cute little girl dancing happily" --out output/hunyuan.mp4
 """
 import argparse
 import json
@@ -23,6 +22,7 @@ from pathlib import Path
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -38,6 +38,41 @@ def load_env():
                     k, v = line.split("=", 1)
                     env[k.strip()] = v.strip().strip('"').strip("'")
     return {**env, **os.environ}
+
+def generate_via_colab_tunnel(prompt, out_path, endpoint_url, aspect_ratio="9:16"):
+    """Sends prompt to a running Google Colab / Gradio tunnel instance."""
+    print(f"Connecting to Google Colab / Gradio endpoint at: {endpoint_url}...")
+    endpoint_url = endpoint_url.rstrip("/")
+    api_url = f"{endpoint_url}/api/generate" if not endpoint_url.endswith("/api/generate") else endpoint_url
+    
+    payload = {
+        "model": "hunyuan-video",
+        "prompt": prompt,
+        "aspect_ratio": aspect_ratio,
+        "steps": 30
+    }
+    
+    req = urllib.request.Request(
+        api_url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json", "User-Agent": "VideoAI/1.0"}
+    )
+    
+    try:
+        with urllib.request.urlopen(req, timeout=300) as resp:
+            data = json.loads(resp.read().decode())
+            video_url = data.get("video_url") or data.get("url")
+            if video_url:
+                if video_url.startswith("/"):
+                    video_url = f"{endpoint_url}{video_url}"
+                print(f"Downloading video from Colab tunnel: {video_url}...")
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                urllib.request.urlretrieve(video_url, str(out_path))
+                print(f"✓ Video saved to: {out_path}")
+                return True
+    except Exception as e:
+        print(f"[Colab Tunnel Error] {e}")
+        return False
 
 def generate_via_replicate(prompt, out_path, token, aspect_ratio="9:16"):
     """Runs Tencent HunyuanVideo on Replicate serverless A100 GPUs."""
@@ -128,7 +163,6 @@ def generate_via_fal(prompt, out_path, key, aspect_ratio="9:16"):
             print(f"  Status: {status}...")
 
             if status == "COMPLETED":
-                # Fetch result
                 res_url = f"https://queue.fal.run/fal-ai/hunyuan-video/requests/{request_id}"
                 with urllib.request.urlopen(urllib.request.Request(res_url, headers=headers)) as r_resp:
                     res_data = json.loads(r_resp.read().decode())
@@ -146,43 +180,47 @@ def main():
     parser = argparse.ArgumentParser(description="Tencent HunyuanVideo Client")
     parser.add_argument("--prompt", required=True, help="Video generation prompt")
     parser.add_argument("--out", default="output/hunyuan_video.mp4", help="Output MP4 file path")
-    parser.add_argument("--provider", choices=["auto", "replicate", "fal"], default="auto", help="Cloud API provider")
+    parser.add_argument("--provider", choices=["auto", "colab", "replicate", "fal"], default="auto")
     parser.add_argument("--aspect", default="9:16", help="Aspect ratio (e.g. 9:16, 16:9)")
     args = parser.parse_args()
 
     env = load_env()
-    replicate_token = env.get("REPLICATE_API_TOKEN", "")
-    fal_key = env.get("FAL_KEY", "")
+    out_path = Path(args.out).resolve()
+    colab_endpoint = env.get("HUNYUAN_ENDPOINT") or env.get("COLAB_VIDEO_ENDPOINT")
+    replicate_token = env.get("REPLICATE_API_TOKEN")
+    fal_key = env.get("FAL_KEY")
 
-    out_path = Path(args.out)
-    if not out_path.is_absolute():
-        out_path = ROOT / out_path
+    provider = args.provider
+    if provider == "auto":
+        if colab_endpoint:
+            provider = "colab"
+        elif fal_key:
+            provider = "fal"
+        elif replicate_token:
+            provider = "replicate"
+        else:
+            print("=" * 60)
+            print("Tencent HunyuanVideo (13B Parameters)")
+            print("=" * 60)
+            print("Notice: Running HunyuanVideo requires 14GB–45GB VRAM (your GPU has 4GB VRAM).")
+            print("To generate with HunyuanVideo:")
+            print("  Option 1 (100% Free): Launch the Google Colab Notebook in `colab/VideoAI_Unified_Studio.ipynb`")
+            print("           and set COLAB_VIDEO_ENDPOINT=<your-tunnel-url> in .env")
+            print("  Option 2: Add FAL_KEY in .env (fal.ai/dashboard/keys)")
+            print("  Option 3: Add REPLICATE_API_TOKEN in .env (replicate.com/account/api-tokens)")
+            print("=" * 60)
+            sys.exit(1)
 
-    if args.provider == "replicate" or (args.provider == "auto" and replicate_token):
-        if not replicate_token:
-            print("Error: REPLICATE_API_TOKEN is not set in .env")
-            sys.exit(1)
-        ok = generate_via_replicate(args.prompt, out_path, replicate_token, args.aspect)
-    elif args.provider == "fal" or (args.provider == "auto" and fal_key):
-        if not fal_key:
-            print("Error: FAL_KEY is not set in .env")
-            sys.exit(1)
-        ok = generate_via_fal(args.prompt, out_path, fal_key, args.aspect)
-    else:
-        print("=" * 60)
-        print("Tencent HunyuanVideo Hardware & Setup Notice:")
-        print("=" * 60)
-        print("HunyuanVideo is a 13B parameter model requiring 45GB-60GB VRAM")
-        print("to run locally (your GPU has 4GB VRAM).")
-        print("")
-        print("To run HunyuanVideo via serverless cloud GPUs, add one of these keys to .env:")
-        print("  REPLICATE_API_TOKEN=r8_...   (replicate.com)")
-        print("  or")
-        print("  FAL_KEY=...                  (fal.ai)")
-        print("=" * 60)
+    success = False
+    if provider == "colab" and colab_endpoint:
+        success = generate_via_colab_tunnel(args.prompt, out_path, colab_endpoint, args.aspect)
+    elif provider == "fal" and fal_key:
+        success = generate_via_fal(args.prompt, out_path, fal_key, args.aspect)
+    elif provider == "replicate" and replicate_token:
+        success = generate_via_replicate(args.prompt, out_path, replicate_token, args.aspect)
+    
+    if not success:
         sys.exit(1)
-
-    sys.exit(0 if ok else 1)
 
 if __name__ == "__main__":
     main()
