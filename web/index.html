@@ -936,13 +936,27 @@
           </select>
         </div>
 
-        <!-- Speech Speed -->
+        <!-- Pacing -->
         <div class="option-group">
           <label class="option-label">Pacing</label>
           <select class="select-input" id="optSpeed">
             <option value="1.0">Normal (1.0×)</option>
             <option value="1.05">Fast Paced (1.05×)</option>
             <option value="1.1">High Retention (1.1×)</option>
+          </select>
+        </div>
+
+        <!-- Background Music Bed -->
+        <div class="option-group">
+          <label class="option-label">Background Music Bed</label>
+          <select class="select-input" id="optMusicBed">
+            <option value="lofi-warm" selected>🎵 Lofi Warm (Chill & Cozy)</option>
+            <option value="ambient-pad">🌌 Ambient Pad (Spacious & Deep)</option>
+            <option value="tech-pulse">⚡ Tech Pulse (Modern & Energetic)</option>
+            <option value="cinematic-min">🎻 Cinematic Minimal (Drama & Tension)</option>
+            <option value="docu-pluck">🎸 Docu Pluck (Acoustic & Curious)</option>
+            <option value="lullaby-tender">🧸 Lullaby Tender (Gentle & Sweet)</option>
+            <option value="none">🔇 None (Voice & SFX only)</option>
           </select>
         </div>
 
@@ -1482,6 +1496,7 @@
       const voice = document.getElementById('optVoice').value;
       const speed = parseFloat(document.getElementById('optSpeed').value);
       const sfx = document.getElementById('optSfx').checked;
+      const music = document.getElementById('optMusicBed') ? document.getElementById('optMusicBed').value : 'lofi-warm';
 
       // UI Transitions
       document.getElementById('btnGenerate').disabled = true;
@@ -1515,6 +1530,7 @@
             voice,
             speed,
             sfx,
+            music,
             videoPath: currentUploadedVideoPath,
             avatarPath: currentUploadedAvatarPath,
             persona: persona,
@@ -1544,6 +1560,14 @@
 
       document.getElementById('resTitle').innerText = data.title || 'Generated Short';
       document.getElementById('resScript').innerText = data.script || 'Voice narration completed.';
+
+      const musicEl = document.getElementById('optMusicBed');
+      const musicName = (musicEl && musicEl.value !== 'none') ? musicEl.options[musicEl.selectedIndex].text.replace(/^[^\w]+/, '').trim() : 'Voice Only';
+      const sfxName = document.getElementById('optSfx').checked ? 'Auto-SFX' : 'SFX Off';
+      const metaEl = document.getElementById('resMeta');
+      if (metaEl) {
+        metaEl.innerText = `Format: 9:16 Vertical • Kinetic Captions • ${musicName} • ${sfxName}`;
+      }
 
       const noteEl = document.getElementById('resNote');
       if (data.note) {

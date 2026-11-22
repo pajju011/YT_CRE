@@ -99,6 +99,10 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             self.handle_get_voices()
         elif path == "/api/personas":
             self.handle_get_personas()
+        elif path == "/api/music-beds":
+            self.handle_get_music_beds()
+        elif path == "/api/sfx-catalog":
+            self.handle_get_sfx_catalog()
         elif path == "/" or path == "/index.html":
             self.serve_file(ROOT / "web/index.html")
         else:
@@ -201,6 +205,20 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         try:
             from tools.character_consistency import get_available_personas
             self.send_json({"ok": True, "personas": get_available_personas()})
+        except Exception as e:
+            self.send_json({"ok": False, "error": str(e)}, status=500)
+
+    def handle_get_music_beds(self):
+        try:
+            from tools.audio_ducker import get_available_music_beds
+            self.send_json({"ok": True, "beds": get_available_music_beds()})
+        except Exception as e:
+            self.send_json({"ok": False, "error": str(e)}, status=500)
+
+    def handle_get_sfx_catalog(self):
+        try:
+            from tools.auto_sound_designer import get_available_sfx
+            self.send_json({"ok": True, "sfx": get_available_sfx()})
         except Exception as e:
             self.send_json({"ok": False, "error": str(e)}, status=500)
 
@@ -473,6 +491,7 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         voice = body.get("voice", "af_heart")
         speed = float(body.get("speed", 1.0))
         sfx = body.get("sfx", True)
+        music = body.get("music", "lofi-warm")
         imported_video_path = body.get("videoPath")
 
         def matches_any_word(words, text):
@@ -760,7 +779,7 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             else:
                 balance_note = res_cf.get("error") or "Comfy Router: Insufficient credits. Top up at platform.comfy.org or use the free Storyboard Studio!"
 
-        # 5. Universal Video Compositor Pass (Composite Raw Video + Kokoro Voice + Dynamic Captions)
+        # 5. Universal Video Compositor Pass (Composite Raw Video + Voice + Ducked Music + SFX + Captions)
         voice_wav = pdir / "output" / "kokoro" / "voice.wav"
         if raw_video and raw_video.exists() and voice_wav.exists():
             cmd_comp = [
@@ -768,8 +787,14 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 "--video", str(raw_video),
                 "--audio", str(voice_wav),
                 "--beats", str(beats_file),
-                "--out", str(final_short_path)
+                "--out", str(final_short_path),
+                "--music", str(music)
             ]
+            if sfx:
+                cmd_comp.append("--sfx")
+            else:
+                cmd_comp.append("--no-sfx")
+
             res_c = subprocess.run(cmd_comp, cwd=str(ROOT), capture_output=True, text=True)
             if res_c.returncode == 0 and final_short_path.exists():
                 video_url = "/" + str(final_short_path.relative_to(ROOT)).replace("\\", "/")
