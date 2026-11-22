@@ -644,10 +644,6 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 rem_candidates = list((ROOT / "remotion" / "out").glob(f"*{proj_id.replace('-', '')}*.mp4"))
                 if rem_candidates:
                     video_url = "/" + str(rem_candidates[0].relative_to(ROOT)).replace("\\", "/")
-                elif not is_generative_prompt and category not in ["hunyuan", "freevideo", "longcat"]:
-                    remotion_math = ROOT / "shorts" / "short-2-math" / "output" / "short-2-final.mp4"
-                    if remotion_math.exists():
-                        video_url = "/" + str(remotion_math.relative_to(ROOT)).replace("\\", "/")
 
         if video_url:
             balance_note = ""

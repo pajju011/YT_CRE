@@ -1,13 +1,5 @@
 [
  {
-  "id": "Ai1Door",
-  "durationInSeconds": 36.4,
-  "fps": 30,
-  "width": 1080,
-  "height": 1920,
-  "transparent": false
- },
- {
   "id": "Short10Fees",
   "durationInSeconds": 42,
   "fps": 30,
