@@ -95,6 +95,8 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             self.handle_get_project(proj_id)
         elif path == "/api/config":
             self.handle_get_config()
+        elif path == "/api/voices":
+            self.handle_get_voices()
         elif path == "/" or path == "/index.html":
             self.serve_file(ROOT / "web/index.html")
         else:
@@ -172,6 +174,22 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         if updates:
             save_env_dict(updates)
         self.send_json({"ok": True, "message": "Settings updated successfully."})
+
+    def handle_get_voices(self):
+        try:
+            from tools.gen_voice_multilingual import CURATED_VOICES
+            self.send_json({
+                "ok": True,
+                "kokoro": [
+                    {"id": "af_heart", "name": "Heart (Natural Female)", "lang": "English (US)"},
+                    {"id": "am_adam", "name": "Adam (Deep Male)", "lang": "English (US)"},
+                    {"id": "af_bella", "name": "Bella (Warm Female)", "lang": "English (US)"},
+                    {"id": "am_michael", "name": "Michael (Clear Male)", "lang": "English (US)"}
+                ],
+                "multilingual": CURATED_VOICES
+            })
+        except Exception as e:
+            self.send_json({"ok": False, "error": str(e)}, status=500)
 
     def handle_upload_video(self, body):
         filename = body.get("filename", "uploaded_clip.mp4")
@@ -509,6 +527,12 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             proj_id = "short-8-phish"
         elif matches_any_word(["chord", "music", "song", "piano"], prompt):
             proj_id = "short-9-chords"
+        elif category == "avatar":
+            proj_id = "short-14-dance"
+            custom_title = "Talking Avatar"
+            custom_vo = [
+                {"beat": "speech", "text": prompt if prompt else "Hello! Welcome to our AI video generation studio.", "start": 0.2, "end": 4.5}
+            ]
         elif matches_any_word(["chess", "checkmate"], prompt):
             proj_id = "short-1-chess"
         else:
@@ -530,6 +554,9 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
 
         rel_proj = str(pdir.relative_to(ROOT)).replace("\\", "/")
         py_exe = sys.executable
+        venv_py = ROOT / ".venv-kokoro" / "Scripts" / "python.exe"
+        if venv_py.exists():
+            py_exe = str(venv_py)
 
         # Apply AI script or tailored custom script
         beats_file = pdir / "beats.json"
@@ -553,13 +580,43 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         except Exception as e:
             print(f"[Scripting Fallback] {e}")
 
-        # 1. Synthesize voice with Kokoro
-        cmd_voice = [py_exe, str(ROOT / "tools" / "gen_voice_kokoro.py"), "--project", rel_proj, "--voice", voice, "--speed", str(speed)]
-        subprocess.run(cmd_voice, cwd=str(ROOT), capture_output=True)
+        # 1. Synthesize voice with Kokoro or Edge-TTS (Multi-language)
+        voice_out_wav = pdir / "output" / "kokoro" / "voice.wav"
+        voice_out_wav.parent.mkdir(parents=True, exist_ok=True)
+        is_edge = "-" in voice
 
-        # 2. Sync captions
-        cmd_caps = [py_exe, str(ROOT / "tools" / "update_kokoro_captions.py"), "--project", rel_proj]
-        subprocess.run(cmd_caps, cwd=str(ROOT), capture_output=True)
+        if is_edge:
+            full_text = prompt if (category == "avatar" or is_edge) and prompt else (" ".join(item.get("text", "") for item in custom_vo) if custom_vo else prompt)
+            timings_json = pdir / "output" / "kokoro" / "timings.json"
+            cmd_voice = [
+                py_exe, str(ROOT / "tools" / "gen_voice_multilingual.py"),
+                "--text", full_text,
+                "--voice", voice,
+                "--speed", str(speed),
+                "--out", str(voice_out_wav),
+                "--timings", str(timings_json)
+            ]
+            subprocess.run(cmd_voice, cwd=str(ROOT), capture_output=True)
+            if timings_json.exists():
+                try:
+                    with open(timings_json, encoding="utf-8") as f_tim:
+                        w_list = json.load(f_tim)
+                    from tools.gen_voice_multilingual import words_to_vo_beats
+                    vo_beats = words_to_vo_beats(w_list)
+                    if vo_beats and beats_file.exists():
+                        with open(beats_file, "r", encoding="utf-8") as f:
+                            bdata = json.load(f)
+                        bdata["vo"] = vo_beats
+                        bdata["title"] = custom_title or bdata.get("title", proj_id)
+                        with open(beats_file, "w", encoding="utf-8") as f:
+                            json.dump(bdata, f, indent=2, ensure_ascii=False)
+                except Exception as e:
+                    print(f"[Timings sync error] {e}")
+        else:
+            cmd_voice = [py_exe, str(ROOT / "tools" / "gen_voice_kokoro.py"), "--project", rel_proj, "--voice", voice, "--speed", str(speed)]
+            subprocess.run(cmd_voice, cwd=str(ROOT), capture_output=True)
+            cmd_caps = [py_exe, str(ROOT / "tools" / "update_kokoro_captions.py"), "--project", rel_proj]
+            subprocess.run(cmd_caps, cwd=str(ROOT), capture_output=True)
 
         # 3. Read metadata & script
         beats_file = pdir / "beats.json"
@@ -586,6 +643,21 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             p_imp = (ROOT / imported_video_path.lstrip("/")).resolve()
             if p_imp.exists():
                 raw_video = p_imp
+
+        # Check Talking Head Avatar
+        avatar_img_path = body.get("avatarPath")
+        if not raw_video and (category == "avatar" or avatar_img_path):
+            p_img = (ROOT / avatar_img_path.lstrip("/")).resolve() if avatar_img_path else (ROOT / "media" / "projects" / "dancing-girl" / "b1-dance.png")
+            out_avatar_mp4 = out_dir / "avatar_raw.mp4"
+            cmd_avatar = [
+                py_exe, str(ROOT / "tools" / "gen_talking_avatar.py"),
+                "--image", str(p_img),
+                "--audio", str(voice_out_wav),
+                "--out", str(out_avatar_mp4)
+            ]
+            subprocess.run(cmd_avatar, cwd=str(ROOT), capture_output=True)
+            if out_avatar_mp4.exists():
+                raw_video = out_avatar_mp4
 
         # Check HunyuanVideo
         if not raw_video and category == "hunyuan":

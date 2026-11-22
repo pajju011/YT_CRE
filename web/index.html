@@ -733,6 +733,9 @@
         <button class="mode-tab active" id="tabPrompt" onclick="switchMode('prompt')">
           ✨ Text-to-Video Prompt
         </button>
+        <button class="mode-tab" id="tabAvatar" onclick="switchMode('avatar')">
+          🗣️ Talking Avatar (Photo Lip-Sync)
+        </button>
         <button class="mode-tab" id="tabUpload" onclick="switchMode('upload')">
           📥 Drag & Drop Existing Video
         </button>
@@ -762,16 +765,29 @@
         </div>
       </div>
 
+      <!-- Drag & Drop Zone (for portrait avatar photos) -->
+      <div class="dropzone" id="avatarDropzone" onclick="document.getElementById('avatarUpload').click()">
+        <input type="file" id="avatarUpload" accept="image/png,image/jpeg,image/webp" style="display: none;" onchange="handleAvatarSelected(this.files)">
+        <div style="font-size: 28px;">👤</div>
+        <div class="dropzone-text">Click or drag & drop any Portrait Photo here</div>
+        <div class="dropzone-sub">Animate any face, character, or avatar with natural speech, blinks, and lip-sync!</div>
+        <div class="dropzone-preview" id="avatarPreview">
+          <span>✓ Portrait loaded:</span>
+          <span id="avatarFileName">portrait.png</span>
+        </div>
+      </div>
+
       <!-- Quick Prompt Suggestions -->
       <div class="suggestions" id="suggestionsRow">
         <span class="suggestion-label">Try an idea:</span>
+        <span class="chip" onclick="usePrompt('Hello! Welcome to our 100% free AI video generator studio. Animate photos and generate viral videos effortlessly.', 'avatar', 'en', 'en-US-JennyNeural')">🗣️ English Avatar</span>
+        <span class="chip" onclick="usePrompt('नमस्ते दोस्तों! एआई वीडियो जनरेटर स्टूडियो में आपका स्वागत है। किसी भी फोटो को बोलने वाला अवतार बनाएं।', 'avatar', 'hi', 'hi-IN-SwaraNeural')">🗣️ Hindi Avatar (हिन्दी)</span>
+        <span class="chip" onclick="usePrompt('¡Hola a todos! Bienvenidos a nuestro estudio de generación de video con inteligencia artificial.', 'avatar', 'es', 'es-ES-ElviraNeural')">🗣️ Spanish Avatar (Español)</span>
         <span class="chip" onclick="usePrompt('A cute little girl happily dancing to cheerful music, performing fun dance moves in colorful 3D cartoon animation', 'hunyuan')">Dancing 3D Girl (Hunyuan)</span>
         <span class="chip" onclick="usePrompt('A futuristic cyberpunk city with flying neon cars and cinematic dynamic camera sweep', 'freevideo')">Cyberpunk City (FreeVideo)</span>
         <span class="chip" onclick="usePrompt('An animated character speaking expressively with realistic lip synchronization', 'longcat')">Talking Avatar (LongCat)</span>
         <span class="chip" onclick="usePrompt('The ×11 mental math trick that feels like magic in two seconds', 'math')">×11 Math Trick</span>
         <span class="chip" onclick="usePrompt('How git reflog lets you undo any mistake even if you deleted your branch', 'dev')">Git Reflog Lifesaver</span>
-        <span class="chip" onclick="usePrompt('The 1 percent fee that secretly eats 24 percent of your retirement savings', 'finance')">1% Fee Trap</span>
-        <span class="chip" onclick="usePrompt('Why astronauts on the space station aren\'t weightless, they are falling', 'science')">Astronauts Falling</span>
       </div>
 
       <!-- Options Row -->
@@ -781,6 +797,7 @@
         <div class="option-group">
           <label class="option-label">AI Video Generation Core</label>
           <select class="select-input" id="optCategory">
+            <option value="avatar">🗣️ Talking Avatar (Photo Lip-Sync)</option>
             <option value="hunyuan">🎬 Tencent HunyuanVideo (13B T2V)</option>
             <option value="freevideo">🎬 FlashML FreeVideo (MiniMax H3)</option>
             <option value="longcat">🎬 Meituan LongCat-Video (Foundation)</option>
@@ -794,14 +811,31 @@
           </select>
         </div>
 
+        <!-- Language -->
+        <div class="option-group">
+          <label class="option-label">Language</label>
+          <select class="select-input" id="optLang" onchange="updateVoiceList()">
+            <option value="en">English (US/UK/IN)</option>
+            <option value="hi">Hindi (हिन्दी)</option>
+            <option value="es">Spanish (Español)</option>
+            <option value="fr">French (Français)</option>
+            <option value="de">German (Deutsch)</option>
+            <option value="ja">Japanese (日本語)</option>
+            <option value="pt">Portuguese (Português)</option>
+            <option value="ar">Arabic (العربية)</option>
+            <option value="it">Italian (Italiano)</option>
+            <option value="ko">Korean (한국어)</option>
+            <option value="zh">Chinese (中文)</option>
+            <option value="ta">Tamil (தமிழ்)</option>
+            <option value="te">Telugu (తెలుగు)</option>
+          </select>
+        </div>
+
         <!-- Voice -->
         <div class="option-group">
-          <label class="option-label">AI Voice (Kokoro Local)</label>
+          <label class="option-label">AI Voice Narration</label>
           <select class="select-input" id="optVoice">
-            <option value="af_heart">Heart (Natural Female)</option>
-            <option value="am_adam">Adam (Deep Male)</option>
-            <option value="af_bella">Bella (Warm Female)</option>
-            <option value="am_michael">Michael (Clear Male)</option>
+            <!-- Populated dynamically by updateVoiceList() -->
           </select>
         </div>
 
@@ -960,34 +994,162 @@
     let timerInterval = null;
     let secondsElapsed = 0;
     let currentUploadedVideoPath = null;
+    let currentUploadedAvatarPath = null;
     let currentMode = 'prompt';
+
+    const VOICE_CATALOG = {
+      en: [
+        { group: "Kokoro Neural (Offline/Fast)", voices: [
+          { id: "af_heart", name: "Heart (Natural Female)" },
+          { id: "am_adam", name: "Adam (Deep Male)" },
+          { id: "af_bella", name: "Bella (Warm Female)" },
+          { id: "am_michael", name: "Michael (Clear Male)" }
+        ]},
+        { group: "Edge Neural (Expressive/HD)", voices: [
+          { id: "en-US-JennyNeural", name: "Jenny (Natural Friendly)" },
+          { id: "en-US-GuyNeural", name: "Guy (Casual Male)" },
+          { id: "en-US-AriaNeural", name: "Aria (Expressive Dynamic)" },
+          { id: "en-US-ChristopherNeural", name: "Christopher (Authoritative)" },
+          { id: "en-GB-SoniaNeural", name: "Sonia (British Female)" },
+          { id: "en-GB-RyanNeural", name: "Ryan (British Male)" },
+          { id: "en-IN-NeerjaNeural", name: "Neerja (Indian English)" }
+        ]}
+      ],
+      hi: [
+        { group: "Hindi Neural Voices", voices: [
+          { id: "hi-IN-SwaraNeural", name: "Swara (Hindi Female)" },
+          { id: "hi-IN-MadhurNeural", name: "Madhur (Hindi Male)" }
+        ]}
+      ],
+      es: [
+        { group: "Spanish Neural Voices", voices: [
+          { id: "es-ES-ElviraNeural", name: "Elvira (Castilian Female)" },
+          { id: "es-ES-AlvaroNeural", name: "Alvaro (Castilian Male)" },
+          { id: "es-MX-DaliaNeural", name: "Dalia (Latin America Female)" }
+        ]}
+      ],
+      fr: [
+        { group: "French Neural Voices", voices: [
+          { id: "fr-FR-DeniseNeural", name: "Denise (French Female)" },
+          { id: "fr-FR-HenriNeural", name: "Henri (French Male)" }
+        ]}
+      ],
+      de: [
+        { group: "German Neural Voices", voices: [
+          { id: "de-DE-KatjaNeural", name: "Katja (German Female)" },
+          { id: "de-DE-ConradNeural", name: "Conrad (German Male)" }
+        ]}
+      ],
+      ja: [
+        { group: "Japanese Neural Voices", voices: [
+          { id: "ja-JP-NanamiNeural", name: "Nanami (Japanese Female)" },
+          { id: "ja-JP-KeitaNeural", name: "Keita (Japanese Male)" }
+        ]}
+      ],
+      pt: [
+        { group: "Portuguese Neural Voices", voices: [
+          { id: "pt-BR-FranciscaNeural", name: "Francisca (Brazilian Female)" },
+          { id: "pt-BR-AntonioNeural", name: "Antonio (Brazilian Male)" }
+        ]}
+      ],
+      ar: [
+        { group: "Arabic Neural Voices", voices: [
+          { id: "ar-SA-ZariyahNeural", name: "Zariyah (Arabic Female)" },
+          { id: "ar-SA-HamedNeural", name: "Hamed (Arabic Male)" }
+        ]}
+      ],
+      it: [
+        { group: "Italian Neural Voices", voices: [
+          { id: "it-IT-ElsaNeural", name: "Elsa (Italian Female)" }
+        ]}
+      ],
+      ko: [
+        { group: "Korean Neural Voices", voices: [
+          { id: "ko-KR-SunHiNeural", name: "SunHi (Korean Female)" }
+        ]}
+      ],
+      zh: [
+        { group: "Chinese Neural Voices", voices: [
+          { id: "zh-CN-XiaoxiaoNeural", name: "Xiaoxiao (Mandarin Female)" },
+          { id: "zh-CN-YunxiNeural", name: "Yunxi (Mandarin Male)" }
+        ]}
+      ],
+      ta: [
+        { group: "Tamil Neural Voices", voices: [
+          { id: "ta-IN-PallaviNeural", name: "Pallavi (Tamil Female)" }
+        ]}
+      ],
+      te: [
+        { group: "Telugu Neural Voices", voices: [
+          { id: "te-IN-ShrutiNeural", name: "Shruti (Telugu Female)" }
+        ]}
+      ]
+    };
+
+    function updateVoiceList() {
+      const lang = document.getElementById('optLang').value || 'en';
+      const select = document.getElementById('optVoice');
+      const groups = VOICE_CATALOG[lang] || VOICE_CATALOG.en;
+      
+      select.innerHTML = '';
+      groups.forEach(g => {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = g.group;
+        g.voices.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.id;
+          opt.textContent = v.name;
+          optgroup.appendChild(opt);
+        });
+        select.appendChild(optgroup);
+      });
+    }
 
     function switchMode(mode) {
       currentMode = mode;
       document.getElementById('tabPrompt').className = mode === 'prompt' ? 'mode-tab active' : 'mode-tab';
+      document.getElementById('tabAvatar').className = mode === 'avatar' ? 'mode-tab active' : 'mode-tab';
       document.getElementById('tabUpload').className = mode === 'upload' ? 'mode-tab active' : 'mode-tab';
       
       const dropzone = document.getElementById('dropzone');
+      const avatarDropzone = document.getElementById('avatarDropzone');
       const suggestions = document.getElementById('suggestionsRow');
 
       if (mode === 'upload') {
         dropzone.classList.add('active');
+        avatarDropzone.classList.remove('active');
         suggestions.style.display = 'none';
         document.getElementById('optCategory').value = 'kids';
+      } else if (mode === 'avatar') {
+        dropzone.classList.remove('active');
+        avatarDropzone.classList.add('active');
+        suggestions.style.display = 'flex';
+        document.getElementById('optCategory').value = 'avatar';
       } else {
         dropzone.classList.remove('active');
+        avatarDropzone.classList.remove('active');
         suggestions.style.display = 'flex';
       }
     }
 
-    function usePrompt(text, category) {
+    function usePrompt(text, category, lang, voice) {
       document.getElementById('promptInput').value = text;
       if (category) {
         document.getElementById('optCategory').value = category;
+        if (category === 'avatar') {
+          switchMode('avatar');
+        }
+      }
+      if (lang) {
+        document.getElementById('optLang').value = lang;
+        updateVoiceList();
+      }
+      if (voice) {
+        document.getElementById('optVoice').value = voice;
       }
     }
 
-    // Drag and drop handler
+    // Drag and drop handler for Video
     const dropzone = document.getElementById('dropzone');
     ['dragenter', 'dragover'].forEach(eventName => {
       dropzone.addEventListener(eventName, (e) => {
@@ -1006,6 +1168,54 @@
       const files = dt.files;
       handleFileSelected(files);
     });
+
+    // Drag and drop handler for Avatar Photo
+    const avatarDropzone = document.getElementById('avatarDropzone');
+    ['dragenter', 'dragover'].forEach(eventName => {
+      avatarDropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        avatarDropzone.classList.add('dragover');
+      }, false);
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+      avatarDropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        avatarDropzone.classList.remove('dragover');
+      }, false);
+    });
+    avatarDropzone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      handleAvatarSelected(files);
+    });
+
+    async function handleAvatarSelected(files) {
+      if (!files || files.length === 0) return;
+      const file = files[0];
+      document.getElementById('avatarFileName').innerText = file.name + ' (Uploading...)';
+      document.getElementById('avatarPreview').style.display = 'flex';
+
+      const reader = new FileReader();
+      reader.onload = async function() {
+        try {
+          const res = await fetch('/api/upload-video', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filename: file.name, data: reader.result })
+          });
+          const data = await res.json();
+          if (data.ok) {
+            currentUploadedAvatarPath = data.path;
+            document.getElementById('avatarFileName').innerText = file.name + ' ✓ Ready';
+          } else {
+            alert('Upload error: ' + data.error);
+          }
+        } catch (err) {
+          alert('Upload failed: ' + err);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
 
     async function handleFileSelected(files) {
       if (!files || files.length === 0) return;
@@ -1053,8 +1263,8 @@
 
     async function startGeneration() {
       const prompt = document.getElementById('promptInput').value.trim();
-      if (!prompt && !currentUploadedVideoPath) {
-        alert('Please enter a prompt or drop a video clip.');
+      if (!prompt && !currentUploadedVideoPath && !currentUploadedAvatarPath) {
+        alert('Please enter a prompt, drop a video clip, or upload an avatar photo.');
         return;
       }
 
@@ -1091,7 +1301,8 @@
             voice,
             speed,
             sfx,
-            videoPath: currentUploadedVideoPath
+            videoPath: currentUploadedVideoPath,
+            avatarPath: currentUploadedAvatarPath
           })
         });
 
@@ -1155,7 +1366,9 @@
       document.getElementById('resultCard').classList.remove('active');
       document.getElementById('promptInput').value = '';
       currentUploadedVideoPath = null;
+      currentUploadedAvatarPath = null;
       document.getElementById('dropPreview').style.display = 'none';
+      document.getElementById('avatarPreview').style.display = 'none';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -1216,6 +1429,9 @@
         alert('Failed to save settings: ' + err);
       }
     }
+
+    // Initialize default voices
+    updateVoiceList();
   </script>
 </body>
 </html>
