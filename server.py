@@ -109,6 +109,8 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             self.handle_get_freefield_apps()
         elif path == "/api/cinema/metadata":
             self.handle_get_cinema_metadata()
+        elif path == "/api/faceswap/presets":
+            self.handle_get_faceswap_presets()
         elif path == "/" or path == "/index.html":
             self.serve_file(ROOT / "web/index.html")
         else:
@@ -148,6 +150,10 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.handle_storyboard_decompose(body)
             elif path == "/api/freefield/start":
                 self.handle_start_freefield(body)
+            elif path == "/api/faceswap/swap-image":
+                self.handle_faceswap_image(body)
+            elif path == "/api/faceswap/swap-video":
+                self.handle_faceswap_video(body)
             elif path == "/api/generate-from-prompt":
                 self.handle_generate_from_prompt(body)
             else:
@@ -273,6 +279,108 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 "palettes": [{"id": k, "name": k.replace("_", " ").title()} for k in cinema_studio.PALETTES.keys()],
                 "presets": cinema_studio.CINEMA_PRESETS
             })
+        except Exception as e:
+            self.send_json({"ok": False, "error": str(e)}, status=500)
+
+    def handle_get_faceswap_presets(self):
+        try:
+            from tools import face_swap_engine
+            presets = []
+            for k, v in face_swap_engine.PRESET_TARGETS.items():
+                img_url = ""
+                p = Path(v["image_path"])
+                if p.exists():
+                    img_url = "/" + str(p.relative_to(ROOT)).replace("\\", "/")
+                vid_url = ""
+                if "video_path" in v:
+                    vp = Path(v["video_path"])
+                    if vp.exists():
+                        vid_url = "/" + str(vp.relative_to(ROOT)).replace("\\", "/")
+                presets.append({
+                    "id": v["id"],
+                    "name": v["name"],
+                    "category": v.get("category", "3d"),
+                    "desc": v.get("desc", ""),
+                    "imageUrl": img_url,
+                    "videoUrl": vid_url
+                })
+            self.send_json({"ok": True, "presets": presets})
+        except Exception as e:
+            self.send_json({"ok": False, "error": str(e)}, status=500)
+
+    def handle_faceswap_image(self, body):
+        try:
+            from tools import face_swap_engine
+            source_path = body.get("sourceImage")
+            target_preset = body.get("targetPreset", "dancing_girl")
+            target_path = body.get("targetImage")
+            color_correct = body.get("colorCorrect", True)
+
+            if not source_path:
+                source_path = str(ROOT / "media" / "projects" / "dancing-girl" / "b2-dance.png")
+            else:
+                source_path = str((ROOT / source_path.lstrip("/")).resolve())
+
+            if not target_path or not Path(target_path).exists():
+                preset_info = face_swap_engine.PRESET_TARGETS.get(target_preset, face_swap_engine.PRESET_TARGETS["dancing_girl"])
+                target_path = preset_info["image_path"]
+
+            target_path = str((ROOT / target_path.lstrip("/")).resolve()) if not Path(target_path).is_absolute() else str(target_path)
+
+            out_dir = ROOT / "shorts" / "faceswap-results"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            timestamp = int(time.time())
+            out_file = out_dir / f"swap_{timestamp}.jpg"
+
+            res = face_swap_engine.swap_face_cv(
+                Path(source_path),
+                Path(target_path),
+                out_file,
+                color_correct=color_correct
+            )
+            if res.get("ok"):
+                url = "/" + str(out_file.relative_to(ROOT)).replace("\\", "/")
+                self.send_json({"ok": True, "url": url, "details": res})
+            else:
+                self.send_json(res, status=400)
+        except Exception as e:
+            self.send_json({"ok": False, "error": str(e)}, status=500)
+
+    def handle_faceswap_video(self, body):
+        try:
+            from tools import video_face_swapper, face_swap_engine
+            source_path = body.get("sourceImage")
+            target_preset = body.get("targetPreset", "dancing_girl")
+            target_path = body.get("targetVideo")
+            duration = body.get("duration", 4.0)
+
+            if not source_path:
+                source_path = str(ROOT / "media" / "projects" / "dancing-girl" / "b2-dance.png")
+            else:
+                source_path = str((ROOT / source_path.lstrip("/")).resolve())
+
+            if not target_path or not Path(target_path).exists():
+                preset_info = face_swap_engine.PRESET_TARGETS.get(target_preset, face_swap_engine.PRESET_TARGETS["dancing_girl"])
+                target_path = preset_info.get("video_path") or str(ROOT / "shorts" / "short-storyboard" / "scenes" / "scene_01.mp4")
+
+            target_path = str((ROOT / target_path.lstrip("/")).resolve()) if not Path(target_path).is_absolute() else str(target_path)
+
+            out_dir = ROOT / "shorts" / "faceswap-results"
+            out_dir.mkdir(parents=True, exist_ok=True)
+            timestamp = int(time.time())
+            out_file = out_dir / f"swap_video_{timestamp}.mp4"
+
+            res = video_face_swapper.swap_face_in_video(
+                Path(source_path),
+                Path(target_path),
+                out_file,
+                max_duration=float(duration) if duration else None
+            )
+            if res.get("ok"):
+                url = "/" + str(out_file.relative_to(ROOT)).replace("\\", "/")
+                self.send_json({"ok": True, "url": url, "details": res})
+            else:
+                self.send_json(res, status=400)
         except Exception as e:
             self.send_json({"ok": False, "error": str(e)}, status=500)
 
