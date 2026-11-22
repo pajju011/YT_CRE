@@ -36,3 +36,6 @@ ai-shorts/*/bakeoff/*.mp4
 
 # local editor config
 .vscode/
+
+client_secrets.json
+token.json
