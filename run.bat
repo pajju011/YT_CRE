@@ -1,202 +1,97 @@
 @echo off
-setlocal EnableDelayedExpansion
-
-:: Change directory to the repository root
+setlocal
 cd /d "%~dp0"
-title VideoGenerator Studio
+title VideoAI Studio
 
-:: Locate and configure Python Virtual Environment
+set "PY_CMD=python"
 if exist "%~dp0.venv-kokoro\Scripts\python.exe" (
-    call "%~dp0.venv-kokoro\Scripts\activate.bat"
-    set "PY_CMD="%~dp0.venv-kokoro\Scripts\python.exe""
+    set "PY_CMD=%~dp0.venv-kokoro\Scripts\python.exe"
 ) else if exist "%~dp0venv\Scripts\python.exe" (
-    call "%~dp0venv\Scripts\activate.bat"
-    set "PY_CMD="%~dp0venv\Scripts\python.exe""
-) else (
-    set "PY_CMD=python"
+    set "PY_CMD=%~dp0venv\Scripts\python.exe"
 )
 
-:: Handle command line arguments if provided
-if not "%~1"=="" (
-    set "INTERACTIVE=0"
-    if /i "%~1"=="menu" (
-        set "INTERACTIVE=1"
-        goto menu
-    )
-    if /i "%~1"=="studio" goto opt_studio
-    if /i "%~1"=="voice" goto opt_voice
-    if /i "%~1"=="render" goto opt_render
-    if /i "%~1"=="sfx" goto opt_sfx
-    if /i "%~1"=="test" goto opt_test
-    if /i "%~1"=="auth" goto opt_auth
-    if /i "%~1"=="upload" goto opt_upload
-    if /i "%~1"=="schedule" goto opt_schedule
-    if /i "%~1"=="gen" goto opt_gen
-)
+if /i "%~1"=="freefield" goto opt_freefield
+if /i "%~1"=="menu" goto menu
+if /i "%~1"=="help" goto help
 
-:: DIRECT WEBSITE LAUNCH (Default on double-click or run.bat)
 cls
-echo ================================================================
-echo           STARTING VIDEOGENERATOR WEB STUDIO
-echo ================================================================
+echo =======================================================================
+echo               VIDEOAI STUDIO - 100%% FREE AI VIDEO FACTORY
+echo =======================================================================
 echo.
-echo   Opening: http://localhost:5000 in your browser...
-echo   (Press Ctrl+C in this terminal window to stop the server)
+echo   * Phase 1: Multilingual Voice Studio (80+ Languages) and Talking Head
+echo   * Phase 2: Multi-Scene Storyboard and Character Consistency Engine
+echo   * Phase 3: Auto-Music Scoring Bed, SFX Sound Design and Audio Ducking
+echo   * Phase 4: Face Swapping, Identity Recast and Poisson Blending
+echo   * Cinema:  Freefield 33 Dynamic Camera Moves and Optical Film Look
+echo   * Cloud:   Google Colab T4 Cloud GPU Bridge
 echo.
-echo ================================================================
+echo =======================================================================
+echo   Starting Studio at http://localhost:5000 ...
+echo   (Press Ctrl+C in this window anytime to stop the server)
+echo =======================================================================
+echo.
 
-:: Open browser after 1 second
 start "" cmd /c "timeout /t 1 /nobreak >nul && start http://localhost:5000"
+"%PY_CMD%" server.py
+exit /b %ERRORLEVEL%
 
-:: Start the Web Server
-%PY_CMD% server.py
+:opt_freefield
+cls
+echo =======================================================================
+echo   Launching Freefield Standalone Suite (120+ Open-Weights Apps)...
+echo =======================================================================
+cd /d "%~dp0freefield"
+start "" cmd /c "timeout /t 1 /nobreak >nul && start http://127.0.0.1:3005"
+node --env-file-if-exists=.env --experimental-strip-types --disable-warning=ExperimentalWarning server/server.ts
 exit /b 0
 
 :menu
 cls
-echo ================================================================
-echo           VIDEO GENERATOR - CONTROL PANEL
-echo ================================================================
+echo =======================================================================
+echo                    VIDEOAI STUDIO CONTROL PANEL
+echo =======================================================================
 echo.
-echo   [1] Launch Web Studio (Browser Website)
-echo   [2] Launch Remotion Studio (Visual Canvas Preview)
-echo   [3] Generate Voice ^& Captions (Kokoro AI: Short 2)
-echo   [4] Render Remotion Video (Short2Math / All)
-echo   [5] Mix Audio ^& Sound Effects (mix_sfx.py)
-echo   [6] Test Local Kokoro AI Voice (test_kokoro.py)
-echo   [7] YouTube: OAuth Login (auth_login.py)
-echo   [8] YouTube: Upload Video (upload_youtube.py)
-echo   [9] YouTube: Schedule Video (schedule_youtube.py)
-echo   [10] Regenerate Remotion Registry (npm run gen)
+echo   [1] Launch VideoAI Web Studio (Default - http://localhost:5000)
+echo   [2] Launch Freefield Standalone Suite (120+ Apps - http://localhost:3005)
+echo   [3] Test Local Kokoro TTS Voice Engine
+echo   [4] Test Face Swap and Video Recast (Phase 4)
+echo   [5] Launch Remotion Studio (Canvas Animation Preview)
 echo   [0] Exit
 echo.
-echo ================================================================
+echo =======================================================================
 set "choice=1"
-set /p "choice=Enter choice [0-10]: "
+set /p "choice=Enter choice [0-5] (Default: 1): "
 
 if "%choice%"=="1" (
+    cd /d "%~dp0"
     start "" cmd /c "timeout /t 1 /nobreak >nul && start http://localhost:5000"
-    %PY_CMD% server.py
-    goto check_return
+    "%PY_CMD%" server.py
+    exit /b 0
 )
-if "%choice%"=="2" goto opt_studio
-if "%choice%"=="3" goto opt_voice
-if "%choice%"=="4" goto opt_render
-if "%choice%"=="5" goto opt_sfx
-if "%choice%"=="6" goto opt_test
-if "%choice%"=="7" goto opt_auth
-if "%choice%"=="8" goto opt_upload
-if "%choice%"=="9" goto opt_schedule
-if "%choice%"=="10" goto opt_gen
-if "%choice%"=="0" exit /b 0
-
-echo.
-echo Invalid option selected: %choice%
-pause
-goto menu
-
-:opt_studio
-echo.
-echo ================================================================
-echo Starting Remotion Studio in browser...
-echo (Press Ctrl+C to stop)
-echo ================================================================
-cd /d "%~dp0remotion"
-call npm run studio
-cd /d "%~dp0"
-goto check_return
-
-:opt_voice
-echo.
-echo ================================================================
-echo Generating voice with Kokoro ONNX...
-echo ================================================================
-%PY_CMD% tools\gen_voice_kokoro.py
-if errorlevel 1 (
-    echo [ERROR] Kokoro voice generation failed.
-    goto check_return
-)
-echo.
-echo Updating Remotion word timestamps ^& captions...
-%PY_CMD% tools\update_kokoro_captions.py
-if errorlevel 1 (
-    echo [ERROR] Caption update failed.
-    goto check_return
-)
-echo [SUCCESS] Voice and captions generated successfully!
-goto check_return
-
-:opt_render
-echo.
-echo ================================================================
-echo Rendering Short2Math Video via Remotion...
-echo ================================================================
-cd /d "%~dp0remotion"
-call npm run gen
-node scripts\render-all.mjs Short2Math
-cd /d "%~dp0"
-goto check_return
-
-:opt_sfx
-echo.
-echo ================================================================
-echo Auditioning SFX mix...
-echo ================================================================
-if exist "%~dp0shorts\short-2-math\sfx-plan.json" (
-    %PY_CMD% tools\mix_sfx.py shorts\short-2-math\sfx-plan.json
-) else (
-    echo [ERROR] shorts\short-2-math\sfx-plan.json not found.
-)
-goto check_return
-
-:opt_test
-echo.
-echo ================================================================
-echo Running Kokoro TTS test...
-echo ================================================================
-%PY_CMD% test_kokoro.py
-goto check_return
-
-:opt_auth
-echo.
-echo ================================================================
-echo Authorizing YouTube Account (Browser OAuth)...
-echo ================================================================
-%PY_CMD% auth_login.py
-goto check_return
-
-:opt_upload
-echo.
-echo ================================================================
-echo Uploading Video to YouTube...
-echo ================================================================
-%PY_CMD% upload_youtube.py
-goto check_return
-
-:opt_schedule
-echo.
-echo ================================================================
-echo Scheduling Video on YouTube...
-echo ================================================================
-%PY_CMD% schedule_youtube.py
-goto check_return
-
-:opt_gen
-echo.
-echo ================================================================
-echo Regenerating Remotion Registry...
-echo ================================================================
-cd /d "%~dp0remotion"
-call npm run gen
-cd /d "%~dp0"
-echo [SUCCESS] Registry updated.
-goto check_return
-
-:check_return
-if "%INTERACTIVE%"=="1" (
-    echo.
+if "%choice%"=="2" goto opt_freefield
+if "%choice%"=="3" (
+    "%PY_CMD%" tools/test_kokoro.py
     pause
     goto menu
-) else (
-    exit /b %errorlevel%
 )
+if "%choice%"=="4" (
+    "%PY_CMD%" tools/face_swap_engine.py --source media/projects/dancing-girl/b2-dance.png --target media/projects/dancing-girl/b1-dance.png --out shorts/faceswap-results/menu_test.jpg
+    pause
+    goto menu
+)
+if "%choice%"=="5" (
+    cd /d "%~dp0remotion"
+    call npm run studio
+    pause
+    goto menu
+)
+if "%choice%"=="0" exit /b 0
+goto menu
+
+:help
+echo Usage:
+echo   run.bat            : Launch VideoAI Web Studio (http://localhost:5000)
+echo   run.bat menu       : Open interactive tool selector
+echo   run.bat freefield  : Launch standalone Freefield Suite (http://localhost:3005)
+exit /b 0
