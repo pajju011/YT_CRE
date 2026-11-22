@@ -522,7 +522,7 @@
     </a>
     <div class="engine-badge">
       <span class="status-dot"></span>
-      Kokoro AI Engine Active
+      MaiToken & Kokoro AI Active
     </div>
   </header>
 
@@ -553,6 +553,7 @@
       <!-- Quick Prompt Suggestions -->
       <div class="suggestions">
         <span class="suggestion-label">Try an idea:</span>
+        <span class="chip" onclick="usePrompt('A cute little girl happily dancing to cheerful music in colorful 3D cartoon animation', 'generative')">Dancing 3D Cartoon</span>
         <span class="chip" onclick="usePrompt('The ×11 mental math trick that feels like magic in two seconds', 'math')">×11 Math Trick</span>
         <span class="chip" onclick="usePrompt('How git reflog lets you undo any mistake even if you deleted your branch', 'dev')">Git Reflog Lifesaver</span>
         <span class="chip" onclick="usePrompt('The Monty Hall problem: Why you should always switch doors', 'math')">Monty Hall Paradox</span>
@@ -568,6 +569,8 @@
         <div class="option-group">
           <label class="option-label">Visual Style</label>
           <select class="select-input" id="optCategory">
+            <option value="generative">🎬 AI Generative Video (Seedance / Kling)</option>
+            <option value="kids">🎨 3D Cartoon & Character Story</option>
             <option value="math">Mental Math & Equations</option>
             <option value="dev">Dev Console & Code</option>
             <option value="finance">Finance & Growth Charts</option>
@@ -670,6 +673,8 @@
           <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Spoken Script:</span>
           <div class="narration-box" id="resScript">Loading script...</div>
         </div>
+
+        <div id="resNote" style="display: none; padding: 10px 14px; background: rgba(245, 215, 110, 0.12); border: 1px solid rgba(245, 215, 110, 0.3); border-radius: 8px; font-size: 12px; color: var(--gold); line-height: 1.5;"></div>
 
         <div class="result-actions">
           <a class="btn-action btn-download" id="resDownload" href="#" download>
@@ -779,6 +784,14 @@
       currentVideoData = data;
       document.getElementById('resTitle').innerText = data.title || 'Generated Short';
       document.getElementById('resScript').innerText = data.script || 'Voice narration completed.';
+
+      const noteEl = document.getElementById('resNote');
+      if (data.note) {
+        noteEl.innerText = 'ℹ️ ' + data.note;
+        noteEl.style.display = 'block';
+      } else {
+        noteEl.style.display = 'none';
+      }
 
       const video = document.getElementById('resVideo');
       const downloadLink = document.getElementById('resDownload');
