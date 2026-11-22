@@ -393,7 +393,16 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         custom_title = None
         custom_vo = None
 
-        if is_generative_prompt:
+        if category == "hunyuan":
+            proj_id = "short-7-kids"
+            custom_title = "HunyuanVideo Generation"
+            custom_vo = [
+                {"beat": "hook", "text": "Generated with Tencent HunyuanVideo. Watch the full animation.", "start": 0.4, "end": 4.5},
+                {"beat": "setup", "text": "Rendering motion dynamics using Tencent's 13B foundation model.", "start": 4.8, "end": 9.0},
+                {"beat": "reveal", "text": "Smooth frame-by-frame 3D character animation.", "start": 9.2, "end": 14.5},
+                {"beat": "loop", "text": "Experience the future of open-source video generation.", "start": 14.8, "end": 19.0}
+            ]
+        elif is_generative_prompt:
             proj_id = "short-7-kids"
             custom_title = "Cute 3D Dancing Animation"
             custom_vo = [
@@ -488,7 +497,14 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
 
         # 4. Find video URL
         video_url = None
-        if is_generative_prompt:
+        if category == "hunyuan":
+            out_hunyuan = ROOT / "shorts" / "short-7-kids" / "output" / "hunyuan_video.mp4"
+            cmd_hunyuan = [py_exe, str(ROOT / "tools" / "gen_hunyuan.py"), "--prompt", prompt, "--out", str(out_hunyuan)]
+            res_h = subprocess.run(cmd_hunyuan, cwd=str(ROOT), capture_output=True, text=True)
+            if out_hunyuan.exists() and res_h.returncode == 0:
+                video_url = "/" + str(out_hunyuan.relative_to(ROOT)).replace("\\", "/")
+
+        if "blue" in prompt or "desert" in prompt:
             gen_clip = ROOT / "media" / "projects" / "blue-man" / "01-desert-door.mp4"
             if gen_clip.exists():
                 video_url = "/" + str(gen_clip.relative_to(ROOT)).replace("\\", "/")
@@ -500,7 +516,7 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 if mp4s:
                     video_url = "/" + str(mp4s[0].relative_to(ROOT)).replace("\\", "/")
 
-        if not video_url:
+        if not video_url and not is_generative_prompt and category != "hunyuan":
             remotion_final = ROOT / "shorts" / "short-2-math" / "output" / "short-2-final.mp4"
             if remotion_final.exists():
                 video_url = "/" + str(remotion_final.relative_to(ROOT)).replace("\\", "/")
@@ -508,8 +524,10 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         voice_url = "/" + rel_proj + "/output/kokoro/voice.wav"
 
         balance_note = ""
-        if is_generative_prompt:
-            balance_note = "Your MaiToken balance is currently 0.00 credits (top up at console.maitoken.net to generate new AI video pixels with Seedance 2.5 or Kling). Generated custom voice narration & preview."
+        if category == "hunyuan" and not video_url:
+            balance_note = "Tencent HunyuanVideo is a 13B model requiring 45GB-60GB VRAM to run locally (your GPU has 4GB VRAM). To run it via cloud A100 GPUs, add REPLICATE_API_TOKEN or FAL_KEY to .env."
+        elif is_generative_prompt and not video_url:
+            balance_note = "Your MaiToken balance is 0.00 credits. Seedance 2.5 / Kling text-to-video requires credits to render new animated 3D video pixels. The AI voice narration was generated locally."
 
         self.send_json({
             "ok": True,

@@ -567,15 +567,16 @@
         
         <!-- Category -->
         <div class="option-group">
-          <label class="option-label">Visual Style</label>
+          <label class="option-label">Video Engine / Style</label>
           <select class="select-input" id="optCategory">
-            <option value="generative">🎬 AI Generative Video (Seedance / Kling)</option>
-            <option value="kids">🎨 3D Cartoon & Character Story</option>
-            <option value="math">Mental Math & Equations</option>
-            <option value="dev">Dev Console & Code</option>
-            <option value="finance">Finance & Growth Charts</option>
-            <option value="science">Physics & Space Orbit</option>
-            <option value="vox">Vox Paper Documentary</option>
+            <option value="hunyuan">🎬 Tencent HunyuanVideo (Text-to-Video AI)</option>
+            <option value="generative">🎬 Seedance 2.5 / Kling (MaiToken)</option>
+            <option value="kids">🎨 3D Cartoon Storybook (Local Remotion)</option>
+            <option value="math">Mental Math & Equations (Local Remotion)</option>
+            <option value="dev">Dev Console & Code (Local Remotion)</option>
+            <option value="finance">Finance & Growth Charts (Local Remotion)</option>
+            <option value="science">Physics & Space Orbit (Local Remotion)</option>
+            <option value="vox">Vox Paper Documentary (Local Remotion)</option>
           </select>
         </div>
 
@@ -657,8 +658,14 @@
     <section class="result-card" id="resultCard">
       
       <!-- 9:16 Video Preview -->
-      <div class="video-mockup">
+      <div class="video-mockup" id="resVideoWrapper">
         <video id="resVideo" controls playsinline></video>
+        <div id="resAudioFallback" style="display: none; padding: 24px; text-align: center; flex-direction: column; align-items: center; gap: 14px; color: var(--text-muted);">
+          <div style="font-size: 32px;">🎙️</div>
+          <div style="font-size: 14px; font-weight: 600; color: #fff;">Voice Narration Generated</div>
+          <div style="font-size: 11px; line-height: 1.5; color: var(--text-muted);">Generating new 3D cartoon video pixels requires Seedance credits on MaiToken.<br>Listen to your generated voice track:</div>
+          <audio id="resAudioPlayer" controls style="width: 100%; margin-top: 8px;"></audio>
+        </div>
       </div>
 
       <!-- Video Details & Actions -->
@@ -794,14 +801,27 @@
       }
 
       const video = document.getElementById('resVideo');
+      const fallback = document.getElementById('resAudioFallback');
+      const audioPlayer = document.getElementById('resAudioPlayer');
       const downloadLink = document.getElementById('resDownload');
-      const videoSrc = (data.videoUrl || '/shorts/short-2-math/output/short-2-final.mp4') + '?t=' + Date.now();
 
-      video.src = videoSrc;
-      video.play().catch(() => {});
-
-      downloadLink.href = data.videoUrl || '#';
-      downloadLink.setAttribute('download', (data.id || 'video') + '.mp4');
+      if (data.videoUrl) {
+        video.src = data.videoUrl + '?t=' + Date.now();
+        video.style.display = 'block';
+        fallback.style.display = 'none';
+        video.play().catch(() => {});
+        downloadLink.style.display = 'flex';
+        downloadLink.href = data.videoUrl;
+        downloadLink.setAttribute('download', (data.id || 'video') + '.mp4');
+      } else {
+        video.style.display = 'none';
+        fallback.style.display = 'flex';
+        downloadLink.style.display = 'none';
+        if (data.voiceUrl) {
+          audioPlayer.src = data.voiceUrl + '?t=' + Date.now();
+          audioPlayer.play().catch(() => {});
+        }
+      }
 
       // Scroll smoothly to result
       document.getElementById('resultCard').scrollIntoView({ behavior: 'smooth' });
