@@ -1,6 +1,6 @@
 {
   "id": "short-7-kids",
-  "title": "HunyuanVideo Generation",
+  "title": "Tencent HunyuanVideo Generation",
   "subtype": "image-story",
   "series": "kids-story",
   "audience": "ages 4-6",
@@ -22,19 +22,19 @@
     },
     {
       "beat": "setup",
-      "text": "Rendering motion dynamics using Tencent's 13B foundation model.",
+      "text": "Rendering 3D motion dynamics using Tencent's 13B foundation model.",
       "start": 4.8,
       "end": 9.0
     },
     {
       "beat": "reveal",
-      "text": "Smooth frame-by-frame 3D character animation.",
+      "text": "Smooth frame-by-frame character animation with rich details.",
       "start": 9.2,
       "end": 14.5
     },
     {
       "beat": "loop",
-      "text": "Experience the future of open-source video generation.",
+      "text": "Experience open-source generative video created right on your PC.",
       "start": 14.8,
       "end": 19.0
     }

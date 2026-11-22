@@ -3,9 +3,8 @@
 import type { VoLine } from '../../lib/shorts';
 
 export const VO: VoLine[] = [
-  { text: "Look at her dance! She has the happiest rhythm in the world.", start: 0.4, end: 3.589 },
-  { text: "Moving her hands and feet to the beat with bright cheerful energy.", start: 4.8, end: 8.45 },
-  { text: "Can you dance along with these fun 3D animation moves?", start: 9.2, end: 12.54 },
-  { text: "Step left, step right, and spin with an adorable big smile!", start: 13.8, end: 17.593 },
-  { text: "Now let the music play and start dancing all over again!", start: 19.8, end: 23.14 },
+  { text: "Generated with Tencent HunyuanVideo. Watch the full animation.", start: 0.4, end: 4.549 },
+  { text: "Rendering 3D motion dynamics using Tencent's 13B foundation model.", start: 4.8, end: 9.962 },
+  { text: "Smooth frame-by-frame character animation with rich details.", start: 9.2, end: 13.135 },
+  { text: "Experience open-source generative video created right on your PC.", start: 14.8, end: 19.11 },
 ];
