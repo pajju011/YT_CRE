@@ -1,0 +1,37 @@
+{
+  "id": "short-14-dance",
+  "title": "Cute 3D Dancing Girl",
+  "composition": "Short14Dance",
+  "format": {
+    "width": 1080,
+    "height": 1920,
+    "fps": 30,
+    "durationSec": 15
+  },
+  "vo": [
+    {
+      "beat": "hook",
+      "text": "Look at her dance! She has the sweetest rhythm in the world.",
+      "start": 0.3,
+      "end": 3.8
+    },
+    {
+      "beat": "setup",
+      "text": "Moving her hands and tapping her feet to the cheerful music.",
+      "start": 4.0,
+      "end": 7.8
+    },
+    {
+      "beat": "reveal",
+      "text": "Spinning around with the brightest smile you have ever seen!",
+      "start": 8.0,
+      "end": 11.8
+    },
+    {
+      "beat": "loop",
+      "text": "Strike a happy pose and let's dance all over again!",
+      "start": 12.0,
+      "end": 15.0
+    }
+  ]
+}

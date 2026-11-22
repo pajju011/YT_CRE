@@ -470,9 +470,18 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 {"beat": "reveal", "text": "Long-form temporal consistency with zero color drift.", "start": 9.2, "end": 14.5},
                 {"beat": "loop", "text": "Watch this adorable character animation loop again from the start.", "start": 14.8, "end": 19.0}
             ]
+        elif matches_any_word(["dance", "dancing", "girl", "moves", "smile", "smiling"], prompt):
+            proj_id = "short-14-dance"
+            custom_title = "Cute 3D Dancing Girl"
+            custom_vo = [
+                {"beat": "hook", "text": "Look at her dance! She has the sweetest rhythm in the world.", "start": 0.3, "end": 3.8},
+                {"beat": "setup", "text": "Moving her hands and tapping her feet to the cheerful music.", "start": 4.0, "end": 7.8},
+                {"beat": "reveal", "text": "Spinning around with the brightest smile you have ever seen!", "start": 8.0, "end": 11.8},
+                {"beat": "loop", "text": "Strike a happy pose and let's dance all over again!", "start": 12.0, "end": 15.0}
+            ]
         elif is_generative_prompt or imported_video_path:
             proj_id = "short-7-kids"
-            custom_title = "Cute 3D Dancing Animation"
+            custom_title = "Cute 3D Story Animation"
             custom_vo = [
                 {"beat": "hook", "text": "Look at her dance! She has the happiest rhythm in the world.", "start": 0.4, "end": 4.5},
                 {"beat": "setup", "text": "Moving her hands and feet to the beat with bright cheerful energy.", "start": 4.8, "end": 9.0},
@@ -626,15 +635,22 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             if res_c.returncode == 0 and final_short_path.exists():
                 video_url = "/" + str(final_short_path.relative_to(ROOT)).replace("\\", "/")
 
-        # 6. Fallback to existing Remotion renders if no raw video and non-generative
-        if not video_url and not is_generative_prompt and category not in ["hunyuan", "freevideo", "longcat"]:
-            mp4s = list(out_dir.glob("*-final.mp4")) or list(out_dir.glob("*-sfx.mp4")) or list(out_dir.glob("*.mp4"))
+        # 6. Video resolution from rendered outputs
+        if not video_url:
+            mp4s = list(out_dir.glob("final_short.mp4")) or list(out_dir.glob("*-final.mp4")) or list(out_dir.glob("*-sfx.mp4")) or list(out_dir.glob("*.mp4"))
             if mp4s:
                 video_url = "/" + str(mp4s[0].relative_to(ROOT)).replace("\\", "/")
             else:
-                remotion_math = ROOT / "shorts" / "short-2-math" / "output" / "short-2-final.mp4"
-                if remotion_math.exists():
-                    video_url = "/" + str(remotion_math.relative_to(ROOT)).replace("\\", "/")
+                rem_candidates = list((ROOT / "remotion" / "out").glob(f"*{proj_id.replace('-', '')}*.mp4"))
+                if rem_candidates:
+                    video_url = "/" + str(rem_candidates[0].relative_to(ROOT)).replace("\\", "/")
+                elif not is_generative_prompt and category not in ["hunyuan", "freevideo", "longcat"]:
+                    remotion_math = ROOT / "shorts" / "short-2-math" / "output" / "short-2-final.mp4"
+                    if remotion_math.exists():
+                        video_url = "/" + str(remotion_math.relative_to(ROOT)).replace("\\", "/")
+
+        if video_url:
+            balance_note = ""
 
         voice_url = "/" + rel_proj + "/output/kokoro/voice.wav"
 
