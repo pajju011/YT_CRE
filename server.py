@@ -167,12 +167,14 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             "hasReplicateToken": bool(env.get("REPLICATE_API_TOKEN")),
             "replicateTokenMasked": mask(env.get("REPLICATE_API_TOKEN")),
             "hasMaiTokenKey": bool(env.get("MAITOKEN_API_KEY")),
-            "maiTokenKeyMasked": mask(env.get("MAITOKEN_API_KEY"))
+            "maiTokenKeyMasked": mask(env.get("MAITOKEN_API_KEY")),
+            "hasComfyKey": bool(env.get("COMFY_API_KEY")),
+            "comfyKeyMasked": mask(env.get("COMFY_API_KEY"))
         })
 
     def handle_save_config(self, body):
         updates = {}
-        for key in ["COLAB_VIDEO_ENDPOINT", "HUNYUAN_ENDPOINT", "FREEVIDEO_ENDPOINT", "LONGCAT_ENDPOINT", "FAL_KEY", "REPLICATE_API_TOKEN", "MAITOKEN_API_KEY"]:
+        for key in ["COLAB_VIDEO_ENDPOINT", "HUNYUAN_ENDPOINT", "FREEVIDEO_ENDPOINT", "LONGCAT_ENDPOINT", "FAL_KEY", "REPLICATE_API_TOKEN", "MAITOKEN_API_KEY", "COMFY_API_KEY"]:
             if key in body and body[key] != "":
                 updates[key] = body[key]
         if updates:
@@ -746,6 +748,17 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         # Check MaiToken Seedance
         if not raw_video and category == "generative":
             balance_note = "Your MaiToken balance is 0.00 credits. Use the free Google Colab Hub or drag-and-drop any MP4 video below to add AI voice and captions!"
+
+        # Check Comfy Router (Wan 2.5 / Kling)
+        if not raw_video and category in ["wan", "kling"]:
+            out_comfy = out_dir / f"{category}_raw.mp4"
+            from tools import comfy_client
+            model_name = "kling/kling-3.0-turbo" if category == "kling" else "wan/wan2.5-t2v-preview"
+            res_cf = comfy_client.generate_video(prompt, out_comfy, model=model_name)
+            if res_cf.get("ok") and out_comfy.exists():
+                raw_video = out_comfy
+            else:
+                balance_note = res_cf.get("error") or "Comfy Router: Insufficient credits. Top up at platform.comfy.org or use the free Storyboard Studio!"
 
         # 5. Universal Video Compositor Pass (Composite Raw Video + Kokoro Voice + Dynamic Captions)
         voice_wav = pdir / "output" / "kokoro" / "voice.wav"

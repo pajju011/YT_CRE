@@ -893,6 +893,8 @@
           <select class="select-input" id="optCategory">
             <option value="storyboard">🎬 Multi-Scene Storyboard & Consistency</option>
             <option value="avatar">🗣️ Talking Avatar (Photo Lip-Sync)</option>
+            <option value="wan">🎬 Wan 2.5 / 2.7 Video (Comfy Cloud)</option>
+            <option value="kling">🎬 Kling 3.0 / 4.0 Video (Comfy Cloud)</option>
             <option value="hunyuan">🎬 Tencent HunyuanVideo (13B T2V)</option>
             <option value="freevideo">🎬 FlashML FreeVideo (MiniMax H3)</option>
             <option value="longcat">🎬 Meituan LongCat-Video (Foundation)</option>
@@ -1079,6 +1081,12 @@
       <div class="config-field">
         <label class="config-label">MaiToken API Key:</label>
         <input type="password" class="config-input" id="cfgMaiToken" placeholder="sk-easy-...">
+      </div>
+
+      <div class="config-field">
+        <label class="config-label">ComfyUI Platform API Key (comfy.org Router):</label>
+        <span class="config-hint">Supports Wan 2.5/2.7, Kling 3/4, MiniMax, LTX-Video, and Flux:</span>
+        <input type="password" class="config-input" id="cfgComfyKey" placeholder="comfyui-...">
       </div>
 
       <button class="btn-save-cfg" onclick="saveSettings()">Save & Connect</button>
@@ -1606,6 +1614,7 @@
         if (cfg.falKeyMasked) document.getElementById('cfgFalKey').placeholder = cfg.falKeyMasked;
         if (cfg.replicateTokenMasked) document.getElementById('cfgReplicateToken').placeholder = cfg.replicateTokenMasked;
         if (cfg.maiTokenKeyMasked) document.getElementById('cfgMaiToken').placeholder = cfg.maiTokenKeyMasked;
+        if (cfg.comfyKeyMasked) document.getElementById('cfgComfyKey').placeholder = cfg.comfyKeyMasked;
       } catch (e) {}
     }
 
@@ -1619,11 +1628,13 @@
       const fal = document.getElementById('cfgFalKey').value.trim();
       const rep = document.getElementById('cfgReplicateToken').value.trim();
       const mai = document.getElementById('cfgMaiToken').value.trim();
+      const comfy = document.getElementById('cfgComfyKey').value.trim();
 
       if (colab) updates.COLAB_VIDEO_ENDPOINT = colab;
       if (fal) updates.FAL_KEY = fal;
       if (rep) updates.REPLICATE_API_TOKEN = rep;
       if (mai) updates.MAITOKEN_API_KEY = mai;
+      if (comfy) updates.COMFY_API_KEY = comfy;
 
       try {
         const res = await fetch('/api/config', {
