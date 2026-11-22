@@ -81,6 +81,8 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.handle_youtube_upload(body)
             elif path == "/api/create-short":
                 self.handle_create_short(body)
+            elif path == "/api/start-studio":
+                self.handle_start_studio(body)
             else:
                 self.send_error(404, "Unknown API endpoint")
         except Exception as e:
@@ -358,6 +360,16 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
 
         (target_dir / "script.md").write_text(f"# {title}\n\nGenerated via VideoGenerator Studio.\n", encoding="utf-8")
         self.send_json({"ok": True, "message": f"Created short {new_id}"})
+
+    def handle_start_studio(self, body):
+        global STUDIO_PROCESS
+        remotion_dir = ROOT / "remotion"
+        npm_cmd = "npm.cmd" if sys.platform == "win32" else "npm"
+
+        if "STUDIO_PROCESS" not in globals() or STUDIO_PROCESS is None or STUDIO_PROCESS.poll() is not None:
+            STUDIO_PROCESS = subprocess.Popen([npm_cmd, "run", "studio"], cwd=str(remotion_dir))
+
+        self.send_json({"ok": True, "url": "http://localhost:3000", "message": "Remotion Studio launching at http://localhost:3000"})
 
     # -------------------------------------------------------------------------
     # STATIC FILE SERVING WITH RANGE SUPPORT (FOR VIDEO SEEKING)

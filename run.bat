@@ -5,13 +5,13 @@ setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 title VideoGenerator Launcher
 
-:: Locate Python Virtual Environment
-if exist "%~dp0.venv-kokoro\Scripts\activate.bat" (
+:: Locate and configure Python Virtual Environment
+if exist "%~dp0.venv-kokoro\Scripts\python.exe" (
     call "%~dp0.venv-kokoro\Scripts\activate.bat"
-    set "PY_CMD=python"
-) else if exist "%~dp0venv\Scripts\activate.bat" (
+    set "PY_CMD="%~dp0.venv-kokoro\Scripts\python.exe""
+) else if exist "%~dp0venv\Scripts\python.exe" (
     call "%~dp0venv\Scripts\activate.bat"
-    set "PY_CMD=python"
+    set "PY_CMD="%~dp0venv\Scripts\python.exe""
 ) else (
     set "PY_CMD=python"
 )
@@ -42,8 +42,8 @@ echo ================================================================
 echo           VIDEO GENERATOR - CONTROL PANEL
 echo ================================================================
 echo.
-echo   [1] Launch Web Studio (Modern Website UI) ★ RECOMMENDED
-echo   [2] Launch Remotion Studio (Visual Web Preview)
+echo   [1] Launch Web Studio (Modern Website UI)  ^<-- PRESS ENTER
+echo   [2] Launch Remotion Studio (Visual Canvas Preview)
 echo   [3] Generate Voice ^& Captions (Kokoro AI: Short 2)
 echo   [4] Render Remotion Video (Short2Math / All)
 echo   [5] Mix Audio ^& Sound Effects (mix_sfx.py)
@@ -55,7 +55,8 @@ echo   [10] Regenerate Remotion Registry (npm run gen)
 echo   [0] Exit
 echo.
 echo ================================================================
-set /p choice="Enter choice [0-10]: "
+set "choice=1"
+set /p "choice=Enter choice [1-10] (Default is 1 - Web Studio): "
 
 if "%choice%"=="1" goto opt_web_ui
 if "%choice%"=="2" goto opt_studio
@@ -70,14 +71,15 @@ if "%choice%"=="10" goto opt_gen
 if "%choice%"=="0" goto opt_exit
 
 echo.
-echo Invalid option selected.
+echo Invalid option selected: %choice%
 pause
 goto menu
 
 :opt_web_ui
 echo.
 echo ================================================================
-echo Starting VideoGenerator Web Studio on http://localhost:5000 ...
+echo Starting VideoGenerator Web Studio...
+echo URL: http://localhost:5000
 echo ================================================================
 start "" cmd /c "timeout /t 1 /nobreak >nul && start http://localhost:5000"
 %PY_CMD% server.py

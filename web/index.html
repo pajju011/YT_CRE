@@ -810,9 +810,14 @@
       }
     }
 
-    function openRemotionStudio() {
-      window.open('http://localhost:3000', '_blank');
-      logConsole('Opening Remotion Studio in new tab (Make sure npm run studio is running).');
+    async function openRemotionStudio() {
+      logConsole('Launching Remotion Studio on http://localhost:3000 ...');
+      try {
+        await fetch('/api/start-studio', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      } catch (e) {}
+      setTimeout(() => {
+        window.open('http://localhost:3000', '_blank');
+      }, 1500);
     }
 
     function setButtonsDisabled(disabled) {
