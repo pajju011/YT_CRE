@@ -222,6 +222,8 @@ def composite_short(video_in, audio_in, beats_data, out_path, music_bed="lofi-wa
         "-map", "[v]",
         "-map", audio_map,
         "-c:v", "libx264",
+        "-pix_fmt", "yuv420p",
+        "-movflags", "+faststart",
         "-preset", "fast",
         "-crf", "20",
         "-c:a", "aac",

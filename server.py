@@ -684,7 +684,15 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         custom_title = None
         custom_vo = None
 
-        if category == "hunyuan":
+        if category == "cloud_gpu":
+            proj_id = "short-cloud"
+            custom_title = (prompt[:48].title() + "...") if len(prompt) > 48 else (prompt.title() if prompt else "Cloud GPU Realistic Video")
+            pdir = ROOT / "shorts" / "short-cloud"
+            pdir.mkdir(parents=True, exist_ok=True)
+            custom_vo = [
+                {"beat": "scene", "text": prompt if prompt else "Realistic video generated on Cloud GPU.", "start": 0.2, "end": 5.0}
+            ]
+        elif category == "hunyuan":
             proj_id = "short-7-kids"
             custom_title = "Tencent HunyuanVideo Generation"
             custom_vo = [
@@ -884,7 +892,7 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
 
         out_dir = pdir / "output"
         out_dir.mkdir(parents=True, exist_ok=True)
-        final_short_path = out_dir / "final_short.mp4"
+        final_short_path = out_dir / f"final_short_{int(time.time())}.mp4"
 
         # Check imported video
         if imported_video_path:
@@ -1044,10 +1052,14 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
             res_c = subprocess.run(cmd_comp, cwd=str(ROOT), capture_output=True, text=True)
             if res_c.returncode == 0 and final_short_path.exists():
                 video_url = "/" + str(final_short_path.relative_to(ROOT)).replace("\\", "/")
+            else:
+                print(f"[Compositor fallback] returncode={res_c.returncode}\n{res_c.stderr}")
 
-        # 6. Video resolution from rendered outputs
+        # 6. Video resolution from rendered outputs (prefer freshly generated raw_video over old files)
+        if not video_url and raw_video and raw_video.exists():
+            video_url = "/" + str(raw_video.relative_to(ROOT)).replace("\\", "/")
         if not video_url:
-            mp4s = list(out_dir.glob("final_short.mp4")) or list(out_dir.glob("*-final.mp4")) or list(out_dir.glob("*-sfx.mp4")) or list(out_dir.glob("*.mp4"))
+            mp4s = sorted(out_dir.glob("final_short*.mp4"), key=lambda p: p.stat().st_mtime, reverse=True) or list(out_dir.glob("*-final.mp4")) or list(out_dir.glob("*-sfx.mp4")) or list(out_dir.glob("*.mp4"))
             if mp4s:
                 video_url = "/" + str(mp4s[0].relative_to(ROOT)).replace("\\", "/")
             else:
