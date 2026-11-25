@@ -1,1 +1,11 @@
-{"title": "Test Prompt", "vo": [{"beat": "scene", "text": "A young man in a checkered shirt walking smiling through a sunlit city park.", "start": 0.2, "end": 5.0}]}
+{
+  "title": "Create a 10-second ultra-realistic cinematic vid...",
+  "vo": [
+    {
+      "beat": "scene",
+      "text": "Create a 10-second ultra-realistic cinematic video of a real human man walking naturally along a busy city street during golden hour. He casually adjusts his jacket, looks briefly at the camera with a subtle smile, then turns his gaze forward and continues walking. Natural human movement, realistic facial expressions, accurate skin texture, subtle blinking, realistic hair movement from the breeze, natural body physics, authentic shadows, soft sunlight, shallow depth of field, background pedestrians moving naturally, handheld camera tracking smoothly alongside him. Shot on a professional cinema camera, 4K resolution, 24fps, photorealistic, no CGI, no animation, no artificial-looking skin, no distorted hands, no unnatural movements. Duration exactly 10 seconds.",
+      "start": 0.2,
+      "end": 5.0
+    }
+  ]
+}
