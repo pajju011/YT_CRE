@@ -38,8 +38,10 @@ with open(BEATS, encoding="utf-8") as f:
 
 lines = data.get("vo", [])
 sample_rate = 24000
-duration_sec = data.get("format", {}).get("durationSec", 42)
+explicit_dur = data.get("format", {}).get("durationSec")
+duration_sec = float(explicit_dur) if explicit_dur else 60.0
 final_audio = np.zeros(int(duration_sec * sample_rate), dtype=np.float32)
+max_end_sample = 0
 
 print(f"Generating {len(lines)} narration lines with voice '{VOICE}'...")
 
@@ -68,9 +70,14 @@ for i, line in enumerate(lines):
 
     if start_sample < len(final_audio):
         final_audio[start_sample:end_sample] += samples[:end_sample - start_sample]
+        max_end_sample = max(max_end_sample, end_sample)
 
     duration = len(samples) / rate
     print(f"   Start: {start:.2f}s | Duration: {duration:.2f}s")
+
+if not explicit_dur and max_end_sample > 0:
+    pad_samples = int(0.6 * sample_rate)
+    final_audio = final_audio[:min(len(final_audio), max_end_sample + pad_samples)]
 
 output = OUTPUT_DIR / "voice.wav"
 sf.write(output, final_audio, sample_rate)

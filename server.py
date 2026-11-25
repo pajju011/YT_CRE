@@ -663,8 +663,9 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         self.send_json({"ok": True, "url": "http://localhost:3000", "message": "Remotion Studio launching at http://localhost:3000"})
 
     def handle_generate_from_prompt(self, body):
-        prompt = body.get("prompt", "").lower().strip()
-        category = body.get("category", "math").lower()
+        raw_prompt = body.get("prompt", "").strip()
+        prompt = raw_prompt or "A cinematic photorealistic video scene with smooth natural motion"
+        category = body.get("category", "cloud_gpu").lower()
         voice = body.get("voice", "af_heart")
         speed = float(body.get("speed", 1.0))
         sfx = body.get("sfx", True)
@@ -672,111 +673,14 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         captions = bool(body.get("captions", False))  # Default False: don't create captions for all videos
         imported_video_path = body.get("videoPath")
 
-        def matches_any_word(words, text):
-            pattern = r'\b(' + '|'.join(re.escape(w) for w in words) + r')\b'
-            return bool(re.search(pattern, text, re.IGNORECASE))
+        custom_title = (prompt[:48].strip() + "...") if len(prompt) > 48 else prompt
+        custom_vo = [
+            {"beat": "scene", "text": prompt, "start": 0.2, "end": 5.0}
+        ]
 
-        is_generative_prompt = matches_any_word([
-            "dance", "dancing", "girl", "cartoon", "3d", "character", "cute", 
-            "kid", "kids", "story", "animation", "pip", "fox", "magic", "monster"
-        ], prompt) or category in ["generative", "story", "kids", "hunyuan", "freevideo", "longcat"]
-
-        custom_title = None
-        custom_vo = None
-
-        if category == "cloud_gpu":
-            proj_id = "short-cloud"
-            custom_title = (prompt[:48].title() + "...") if len(prompt) > 48 else (prompt.title() if prompt else "Cloud GPU Realistic Video")
-            pdir = ROOT / "shorts" / "short-cloud"
-            pdir.mkdir(parents=True, exist_ok=True)
-            custom_vo = [
-                {"beat": "scene", "text": prompt if prompt else "Realistic video generated on Cloud GPU.", "start": 0.2, "end": 5.0}
-            ]
-        elif category == "hunyuan":
-            proj_id = "short-7-kids"
-            custom_title = "Tencent HunyuanVideo Generation"
-            custom_vo = [
-                {"beat": "hook", "text": "Generated with Tencent HunyuanVideo. Watch the full animation.", "start": 0.4, "end": 4.5},
-                {"beat": "setup", "text": "Rendering 3D motion dynamics using Tencent's 13B foundation model.", "start": 4.8, "end": 9.0},
-                {"beat": "reveal", "text": "Smooth frame-by-frame character animation with rich details.", "start": 9.2, "end": 14.5},
-                {"beat": "loop", "text": "Experience open-source generative video created right on your PC.", "start": 14.8, "end": 19.0}
-            ]
-        elif category == "freevideo":
-            proj_id = "short-7-kids"
-            custom_title = "FlashML FreeVideo (MiniMax H3)"
-            custom_vo = [
-                {"beat": "hook", "text": "Rendered with FlashML FreeVideo and the MiniMax H3 engine.", "start": 0.4, "end": 4.5},
-                {"beat": "setup", "text": "High-efficiency local video generation built for consumer hardware.", "start": 4.8, "end": 9.0},
-                {"beat": "reveal", "text": "Notice the smooth character movement and dynamic camera flow.", "start": 9.2, "end": 14.5},
-                {"beat": "loop", "text": "Create your next viral short with open source AI video.", "start": 14.8, "end": 19.0}
-            ]
-        elif category == "longcat":
-            proj_id = "short-7-kids"
-            custom_title = "Meituan LongCat-Video"
-            custom_vo = [
-                {"beat": "hook", "text": "Powered by Meituan LongCat-Video foundation model.", "start": 0.4, "end": 4.5},
-                {"beat": "setup", "text": "Unifying text-to-video and audio-driven avatar synchronization.", "start": 4.8, "end": 9.0},
-                {"beat": "reveal", "text": "Long-form temporal consistency with zero color drift.", "start": 9.2, "end": 14.5},
-                {"beat": "loop", "text": "Watch this adorable character animation loop again from the start.", "start": 14.8, "end": 19.0}
-            ]
-        elif matches_any_word(["dance", "dancing", "girl", "moves", "smile", "smiling"], prompt):
-            proj_id = "short-14-dance"
-            custom_title = "Cute 3D Dancing Girl"
-            custom_vo = [
-                {"beat": "hook", "text": "Look at her dance! She has the sweetest rhythm in the world.", "start": 0.3, "end": 3.8},
-                {"beat": "setup", "text": "Moving her hands and tapping her feet to the cheerful music.", "start": 4.0, "end": 7.8},
-                {"beat": "reveal", "text": "Spinning around with the brightest smile you have ever seen!", "start": 8.0, "end": 11.8},
-                {"beat": "loop", "text": "Strike a happy pose and let's dance all over again!", "start": 12.0, "end": 15.0}
-            ]
-        elif is_generative_prompt or imported_video_path:
-            proj_id = "short-7-kids"
-            custom_title = "Cute 3D Story Animation"
-            custom_vo = [
-                {"beat": "hook", "text": "Look at her dance! She has the happiest rhythm in the world.", "start": 0.4, "end": 4.5},
-                {"beat": "setup", "text": "Moving her hands and feet to the beat with bright cheerful energy.", "start": 4.8, "end": 9.0},
-                {"beat": "quiz", "text": "Can you dance along with these fun 3D animation moves?", "start": 9.2, "end": 13.5},
-                {"beat": "reveal", "text": "Step left, step right, and spin with an adorable big smile!", "start": 13.8, "end": 19.5},
-                {"beat": "loop", "text": "Now let the music play and start dancing all over again!", "start": 19.8, "end": 25.0}
-            ]
-        elif matches_any_word(["reflog", "git", "commit", "branch", "terminal"], prompt):
-            proj_id = "short-4-git"
-        elif matches_any_word(["monty", "door", "probab", "paradox"], prompt):
-            proj_id = "short-5-prob"
-        elif matches_any_word(["sort", "bubble", "quick", "algo", "array"], prompt):
-            proj_id = "short-3-algo"
-        elif matches_any_word(["fee", "fees", "retire", "retirement", "invest", "investment", "percent"], prompt):
-            proj_id = "short-10-fees"
-        elif matches_any_word(["orbit", "astronaut", "space", "weightless", "falling"], prompt):
-            proj_id = "short-12-orbit"
-        elif matches_any_word(["map", "mercator", "greenland", "africa", "geography"], prompt):
-            proj_id = "short-11-map"
-        elif matches_any_word(["coffee", "history", "documentary", "vox"], prompt):
-            proj_id = "vox-1-coffee"
-        elif matches_any_word(["excel", "flash fill", "sheet"], prompt):
-            proj_id = "short-6-sheet"
-        elif matches_any_word(["phish", "paypal", "url", "security"], prompt):
-            proj_id = "short-8-phish"
-        elif matches_any_word(["chord", "music", "song", "piano"], prompt):
-            proj_id = "short-9-chords"
-        elif category == "avatar":
-            proj_id = "short-14-dance"
-            custom_title = "Talking Avatar"
-            custom_vo = [
-                {"beat": "speech", "text": prompt if prompt else "Hello! Welcome to our AI video generation studio.", "start": 0.2, "end": 4.5}
-            ]
-        elif category in ["cinema", "cinema-video"]:
-            proj_id = "short-cinema"
-            custom_title = "Cinema Studio (Freefield Engine)"
-            pdir = ROOT / "shorts" / "short-cinema"
-            pdir.mkdir(parents=True, exist_ok=True)
-            custom_vo = [
-                {"beat": "hook", "text": prompt if prompt else "Cinema Studio in motion.", "start": 0.3, "end": 5.0}
-            ]
-        elif category == "storyboard":
+        if category == "storyboard":
             proj_id = "short-storyboard"
             custom_title = "Multi-Scene Storyboard"
-            pdir = ROOT / "shorts" / "short-storyboard"
-            pdir.mkdir(parents=True, exist_ok=True)
             persona_id = body.get("persona", "3d_cartoon")
             scenes_count = int(body.get("scenesCount", 4))
             custom_scenes = body.get("scenes")
@@ -789,24 +693,15 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 {"beat": s.get("beat", f"scene_{i+1}"), "text": s.get("narration", s.get("text", "")), "start": round(i*4.0, 2), "end": round((i+1)*4.0, 2)}
                 for i, s in enumerate(custom_scenes)
             ]
-        elif matches_any_word(["chess", "checkmate"], prompt):
-            proj_id = "short-1-chess"
+        elif category in ["cinema", "cinema-video"]:
+            proj_id = "short-cinema"
+        elif category == "avatar":
+            proj_id = "short-avatar"
         else:
-            if category == "dev":
-                proj_id = "short-4-git"
-            elif category == "finance":
-                proj_id = "short-10-fees"
-            elif category == "science":
-                proj_id = "short-12-orbit"
-            elif category == "vox":
-                proj_id = "vox-1-coffee"
-            else:
-                proj_id = "short-2-math"
+            proj_id = "short-prompt"
 
-        pdir = self.get_project_dir(proj_id)
-        if not pdir:
-            pdir = ROOT / "shorts" / "short-2-math"
-            proj_id = "short-2-math"
+        pdir = ROOT / "shorts" / proj_id
+        pdir.mkdir(parents=True, exist_ok=True)
 
         rel_proj = str(pdir.relative_to(ROOT)).replace("\\", "/")
         py_exe = sys.executable
@@ -814,27 +709,20 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         if venv_py.exists():
             py_exe = str(venv_py)
 
-        # Apply AI script or tailored custom script
+        # Apply AI script or prompt-driven VO script directly (never hijack with canned templates)
         beats_file = pdir / "beats.json"
+        bdata = {"title": custom_title, "vo": custom_vo}
         try:
             from tools import maitoken_client
             ai_script = maitoken_client.generate_script(prompt, category)
-            if ai_script and "vo" in ai_script and beats_file.exists():
-                with open(beats_file, "r", encoding="utf-8") as f:
-                    bdata = json.load(f)
-                bdata["title"] = ai_script.get("title", bdata.get("title", proj_id))
+            if ai_script and "vo" in ai_script:
+                bdata["title"] = ai_script.get("title", custom_title)
                 bdata["vo"] = ai_script["vo"]
-                with open(beats_file, "w", encoding="utf-8") as f:
-                    json.dump(bdata, f, indent=2, ensure_ascii=False)
-            elif custom_vo and beats_file.exists():
-                with open(beats_file, "r", encoding="utf-8") as f:
-                    bdata = json.load(f)
-                bdata["title"] = custom_title or bdata.get("title", proj_id)
-                bdata["vo"] = custom_vo
-                with open(beats_file, "w", encoding="utf-8") as f:
-                    json.dump(bdata, f, indent=2, ensure_ascii=False)
         except Exception as e:
             print(f"[Scripting Fallback] {e}")
+
+        with open(beats_file, "w", encoding="utf-8") as f:
+            json.dump(bdata, f, indent=2, ensure_ascii=False)
 
         # 1. Synthesize voice with Kokoro or Edge-TTS (Multi-language)
         voice_out_wav = pdir / "output" / "kokoro" / "voice.wav"
@@ -871,8 +759,9 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         else:
             cmd_voice = [py_exe, str(ROOT / "tools" / "gen_voice_kokoro.py"), "--project", rel_proj, "--voice", voice, "--speed", str(speed)]
             subprocess.run(cmd_voice, cwd=str(ROOT), capture_output=True)
-            cmd_caps = [py_exe, str(ROOT / "tools" / "update_kokoro_captions.py"), "--project", rel_proj]
-            subprocess.run(cmd_caps, cwd=str(ROOT), capture_output=True)
+            if captions:
+                cmd_caps = [py_exe, str(ROOT / "tools" / "update_kokoro_captions.py"), "--project", rel_proj]
+                subprocess.run(cmd_caps, cwd=str(ROOT), capture_output=True)
 
         # 3. Read metadata & script
         beats_file = pdir / "beats.json"
@@ -934,7 +823,7 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         if not raw_video and category == "cloud_gpu" and colab_endpoint:
             try:
                 from tools.gen_hunyuan import generate_via_colab_tunnel
-                out_colab = out_dir / "cloud_gpu_raw.mp4"
+                out_colab = out_dir / f"cloud_gpu_{int(time.time())}.mp4"
                 print(f"[Unified Engine] Dispatching to Kaggle / Cloud GPU: {colab_endpoint}...")
                 ok_colab = generate_via_colab_tunnel(prompt, out_colab, colab_endpoint)
                 if ok_colab and out_colab.exists():

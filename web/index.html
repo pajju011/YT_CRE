@@ -1066,16 +1066,12 @@
       <!-- Quick Prompt Suggestions -->
       <div class="suggestions" id="suggestionsRow">
         <span class="suggestion-label">Try an idea:</span>
+        <span class="chip" onclick="usePrompt('A young man in a checkered shirt walking smiling through a sunlit city park, photorealistic, cinematic 4k', 'cloud_gpu')">🚀 Realistic Park Walk (Cloud GPU)</span>
+        <span class="chip" onclick="usePrompt('A futuristic sports car drifting through neon-lit Tokyo streets in heavy rain, 4k photorealistic', 'cloud_gpu')">🚀 Cyberpunk Drift (Cloud GPU)</span>
         <span class="chip" onclick="usePrompt('Cyberpunk detective lighting a cigarette under neon rain in a dark futuristic alley', 'cinema')">🎥 Cyberpunk Rain (Cinema Studio)</span>
-        <span class="chip" onclick="usePrompt('A cyber warrior floating mid-air dodging glowing laser beams as time freezes around him', 'cinema')">🎥 Matrix 360° Bullet-Time</span>
         <span class="chip" onclick="usePrompt('Adventures of the little explorer discovering the glowing crystal cave', 'storyboard')">🎬 3D Crystal Cave (Storyboard)</span>
-        <span class="chip" onclick="usePrompt('Cyberpunk detective investigating a neon alley conspiracy in the rainy city', 'storyboard')">🎬 Cyberpunk Storyboard</span>
         <span class="chip" onclick="usePrompt('Hello! Welcome to our 100% free AI video generator studio. Animate photos and generate viral videos effortlessly.', 'avatar', 'en', 'en-US-JennyNeural')">🗣️ English Avatar</span>
         <span class="chip" onclick="usePrompt('नमस्ते दोस्तों! एआई वीडियो जनरेटर स्टूडियो में आपका स्वागत है। किसी भी फोटो को बोलने वाला अवतार बनाएं।', 'avatar', 'hi', 'hi-IN-SwaraNeural')">🗣️ Hindi Avatar (हिन्दी)</span>
-        <span class="chip" onclick="usePrompt('¡Hola a todos! Bienvenidos a nuestro estudio de generación de video con inteligencia artificial.', 'avatar', 'es', 'es-ES-ElviraNeural')">🗣️ Spanish Avatar (Español)</span>
-        <span class="chip" onclick="usePrompt('A cute little girl happily dancing to cheerful music, performing fun dance moves in colorful 3D cartoon animation', 'hunyuan')">Dancing 3D Girl (Hunyuan)</span>
-        <span class="chip" onclick="usePrompt('The ×11 mental math trick that feels like magic in two seconds', 'math')">×11 Math Trick</span>
-        <span class="chip" onclick="usePrompt('How git reflog lets you undo any mistake even if you deleted your branch', 'dev')">Git Reflog Lifesaver</span>
       </div>
 
       <!-- Options Row -->
@@ -1085,8 +1081,8 @@
         <div class="option-group">
           <label class="option-label">AI Video Generation Core</label>
           <select class="select-input" id="optCategory">
-            <option value="cloud_gpu">🚀 Kaggle / Cloud GPU (Realistic 3D Motion)</option>
-            <option value="cinema" selected>🎥 Cinema Studio (Freefield 33 Camera Moves)</option>
+            <option value="cloud_gpu" selected>🚀 Kaggle / Cloud GPU (Realistic 3D Motion)</option>
+            <option value="cinema">🎥 Cinema Studio (Freefield 33 Camera Moves)</option>
             <option value="storyboard">🎬 Multi-Scene Storyboard & Consistency</option>
             <option value="avatar">🗣️ Talking Avatar (Photo Lip-Sync)</option>
             <option value="wan">🎬 Wan 2.5 / 2.7 Video (Comfy Cloud)</option>
@@ -1094,13 +1090,6 @@
             <option value="hunyuan">🎬 Tencent HunyuanVideo (13B T2V)</option>
             <option value="freevideo">🎬 FlashML FreeVideo (MiniMax H3)</option>
             <option value="longcat">🎬 Meituan LongCat-Video (Foundation)</option>
-            <option value="generative">🎬 Seedance 2.5 / Kling (MaiToken)</option>
-            <option value="kids">🎨 3D Cartoon Storybook (Remotion)</option>
-            <option value="math">Mental Math & Equations (Remotion)</option>
-            <option value="dev">Dev Console & Code (Remotion)</option>
-            <option value="finance">Finance & Growth Charts (Remotion)</option>
-            <option value="science">Physics & Space Orbit (Remotion)</option>
-            <option value="vox">Vox Paper Documentary (Remotion)</option>
           </select>
         </div>
 
@@ -1535,7 +1524,7 @@
         storyboardSection.style.display = 'none';
         cinemaSection.style.display = 'none';
         suggestions.style.display = 'none';
-        document.getElementById('optCategory').value = 'kids';
+        document.getElementById('optCategory').value = 'cloud_gpu';
       } else if (mode === 'avatar') {
         dropzone.classList.remove('active');
         avatarDropzone.classList.add('active');
@@ -1559,6 +1548,7 @@
         storyboardSection.style.display = 'none';
         cinemaSection.style.display = 'none';
         suggestions.style.display = 'flex';
+        document.getElementById('optCategory').value = 'cloud_gpu';
       }
     }
 
