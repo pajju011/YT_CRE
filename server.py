@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 import urllib.parse
+import urllib.request
 
 ROOT = Path(__file__).resolve().parent
 PORT = 5000
