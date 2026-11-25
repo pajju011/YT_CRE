@@ -156,6 +156,8 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 self.handle_faceswap_video(body)
             elif path == "/api/generate-from-prompt":
                 self.handle_generate_from_prompt(body)
+            elif path == "/api/test-cloud":
+                self.handle_test_cloud(body)
             else:
                 self.send_error(404, "Unknown API endpoint")
         except Exception as e:
@@ -198,6 +200,18 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
         if updates:
             save_env_dict(updates)
         self.send_json({"ok": True, "message": "Settings updated successfully."})
+
+    def handle_test_cloud(self, body):
+        url = body.get("url", "").strip().rstrip("/")
+        if not url:
+            return self.send_json({"ok": False, "error": "No URL provided."})
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "VideoAI/1.0"})
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                code = resp.status
+                return self.send_json({"ok": True, "message": f"Successfully connected to Cloud GPU! (Status: {code})"})
+        except Exception as e:
+            return self.send_json({"ok": False, "error": f"Failed to reach Cloud GPU: {e}"})
 
     def handle_get_voices(self):
         try:

@@ -1277,16 +1277,23 @@
       </div>
 
       <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">
-        Connect your free Google Colab GPU tunnel or add API keys. Your RTX 2050 has 4GB VRAM; HunyuanVideo and FreeVideo can run for free on Google Colab GPUs!
+        Connect your free <b>Kaggle (30h/week 16GB–30GB GPU)</b> or <b>Google Colab</b> tunnel to generate photorealistic videos with fluid 3D motion!
       </p>
 
       <div class="config-field">
-        <label class="config-label">Google Colab Tunnel URL (100% Free):</label>
-        <span class="config-hint">Launch <code>colab/VideoAI_Unified_Studio.ipynb</code> on Google Colab and paste the Cloudflare URL below:</span>
-        <input type="text" class="config-input" id="cfgColabUrl" placeholder="https://xxxx.trycloudflare.com">
-        <div style="margin-top: 8px;">
+        <label class="config-label">Cloud GPU Tunnel URL (Kaggle / Colab - 100% Free):</label>
+        <span class="config-hint">Launch <code>kaggle/Kaggle_VideoAI_Studio.ipynb</code> or Colab and paste the Cloudflare URL below:</span>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <input type="text" class="config-input" id="cfgColabUrl" placeholder="https://xxxx.trycloudflare.com" style="flex: 1;">
+          <button type="button" class="btn" onclick="testCloudConnection()" style="padding: 10px 14px; font-size: 11px; white-space: nowrap; background: #3b82f6; color: #fff;">⚡ Test</button>
+        </div>
+        <div id="cloudTestStatus" style="font-size: 11px; margin-top: 4px; display: none;"></div>
+        <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
+          <a href="https://www.kaggle.com/code" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 6px; font-size: 11px; font-weight: 600; color: #60a5fa; text-decoration: none;">
+            🚀 Open Kaggle (30h Free GPU)
+          </a>
           <a href="https://colab.research.google.com/github/pajju011/YT_CRE/blob/main/colab/VideoAI_Unified_Studio.ipynb" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; font-size: 11px; font-weight: 600; color: #f59e0b; text-decoration: none;">
-            🚀 Open Notebook in Google Colab (1-Click)
+            ⚡ Open Google Colab
           </a>
         </div>
       </div>
@@ -2086,6 +2093,38 @@
         closeSettings();
       } catch (err) {
         alert('Failed to save settings: ' + err);
+      }
+    }
+
+    async function testCloudConnection() {
+      const url = document.getElementById('cfgColabUrl').value.trim();
+      const statusBox = document.getElementById('cloudTestStatus');
+      if (!url) {
+        statusBox.style.display = 'block';
+        statusBox.style.color = '#ef4444';
+        statusBox.textContent = '❌ Please enter a Cloudflare tunnel URL first.';
+        return;
+      }
+      statusBox.style.display = 'block';
+      statusBox.style.color = '#3b82f6';
+      statusBox.textContent = '⏳ Testing connection to Cloud GPU...';
+      try {
+        const res = await fetch('/api/test-cloud', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          statusBox.style.color = '#10b981';
+          statusBox.textContent = '✅ ' + (data.message || 'Connected successfully!');
+        } else {
+          statusBox.style.color = '#ef4444';
+          statusBox.textContent = '❌ ' + (data.error || 'Failed to connect.');
+        }
+      } catch (e) {
+        statusBox.style.color = '#ef4444';
+        statusBox.textContent = '❌ Network error: ' + e;
       }
     }
 
