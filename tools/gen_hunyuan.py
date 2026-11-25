@@ -40,8 +40,8 @@ def load_env():
     return {**env, **os.environ}
 
 def generate_via_colab_tunnel(prompt, out_path, endpoint_url, aspect_ratio="9:16"):
-    """Sends prompt to a running Google Colab / Gradio tunnel instance."""
-    print(f"Connecting to Google Colab / Gradio endpoint at: {endpoint_url}...")
+    """Sends prompt to a running Google Colab / Kaggle / Cloud GPU tunnel instance."""
+    print(f"Connecting to Cloud GPU endpoint at: {endpoint_url}...")
     endpoint_url = endpoint_url.rstrip("/")
     api_url = f"{endpoint_url}/api/generate" if not endpoint_url.endswith("/api/generate") else endpoint_url
     
@@ -49,7 +49,7 @@ def generate_via_colab_tunnel(prompt, out_path, endpoint_url, aspect_ratio="9:16
         "model": "hunyuan-video",
         "prompt": prompt,
         "aspect_ratio": aspect_ratio,
-        "steps": 30
+        "steps": 25
     }
     
     req = urllib.request.Request(
@@ -59,19 +59,21 @@ def generate_via_colab_tunnel(prompt, out_path, endpoint_url, aspect_ratio="9:16
     )
     
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=300) as resp:
             data = json.loads(resp.read().decode())
             video_url = data.get("video_url") or data.get("url")
             if video_url:
                 if video_url.startswith("/"):
                     video_url = f"{endpoint_url}{video_url}"
-                print(f"Downloading video from Colab tunnel: {video_url}...")
+                print(f"Downloading video from Cloud GPU tunnel: {video_url}...")
                 out_path.parent.mkdir(parents=True, exist_ok=True)
-                urllib.request.urlretrieve(video_url, str(out_path))
+                dl_req = urllib.request.Request(video_url, headers={"User-Agent": "VideoAI/1.0"})
+                with urllib.request.urlopen(dl_req, timeout=120) as dl_resp, open(out_path, "wb") as f_out:
+                    f_out.write(dl_resp.read())
                 print(f"✓ Video saved to: {out_path}")
                 return True
     except Exception as e:
-        print(f"[Colab Tunnel Error] {e}")
+        print(f"[Cloud GPU Tunnel Error] {e}")
         return False
 
 def generate_via_replicate(prompt, out_path, token, aspect_ratio="9:16"):

@@ -1085,6 +1085,7 @@
         <div class="option-group">
           <label class="option-label">AI Video Generation Core</label>
           <select class="select-input" id="optCategory">
+            <option value="cloud_gpu">🚀 Kaggle / Cloud GPU (Realistic 3D Motion)</option>
             <option value="cinema" selected>🎥 Cinema Studio (Freefield 33 Camera Moves)</option>
             <option value="storyboard">🎬 Multi-Scene Storyboard & Consistency</option>
             <option value="avatar">🗣️ Talking Avatar (Photo Lip-Sync)</option>
@@ -2089,6 +2090,10 @@
           body: JSON.stringify(updates)
         });
         const d = await res.json();
+        if (colab) {
+          const catEl = document.getElementById('optCategory');
+          if (catEl) catEl.value = 'cloud_gpu';
+        }
         alert(d.message || 'Saved successfully!');
         closeSettings();
       } catch (err) {

@@ -919,6 +919,20 @@ class StudioRequestHandler(http.server.BaseHTTPRequestHandler):
                 if raw_sb_path.exists():
                     raw_video = raw_sb_path
 
+        # Check Kaggle / Colab Cloud GPU explicitly when selected
+        env = load_env_dict()
+        colab_endpoint = env.get("COLAB_VIDEO_ENDPOINT")
+        if not raw_video and category == "cloud_gpu" and colab_endpoint:
+            try:
+                from tools.gen_hunyuan import generate_via_colab_tunnel
+                out_colab = out_dir / "cloud_gpu_raw.mp4"
+                print(f"[Unified Engine] Dispatching to Kaggle / Cloud GPU: {colab_endpoint}...")
+                ok_colab = generate_via_colab_tunnel(prompt, out_colab, colab_endpoint)
+                if ok_colab and out_colab.exists():
+                    raw_video = out_colab
+            except Exception as e:
+                print(f"[Unified Engine Cloud GPU fallback] {e}")
+
         # Check Freefield Cinema Studio & 33 Camera Moves
         if not raw_video and category in ["cinema", "cinema-video"]:
             c_move = body.get("cameraMove", "dolly_in")
